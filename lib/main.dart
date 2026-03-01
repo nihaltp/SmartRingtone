@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:ringtone_changer/features/settings/settings_page.dart';
 import 'package:ringtone_changer/models/ringtone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -140,18 +141,6 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Add a new Ringtone',
         child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: const Center(child: Text('Settings Page')),
     );
   }
 }
