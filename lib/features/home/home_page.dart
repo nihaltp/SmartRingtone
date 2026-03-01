@@ -3,8 +3,10 @@ import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:ringtone_changer/features/settings/settings_page.dart';
 import 'package:ringtone_changer/models/ringtone.dart';
+import 'package:ringtone_changer/services/call_state_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,10 +19,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> {
+  final _callStateService = CallStateService();
+  bool hasPermission = false;
+
   @override
   void initState() {
     super.initState();
     _loadRingtones();
+    _callStateService.initialize(
+      onAccepted: _onAccepted,
+      onRejected: _onRejected,
+    );
+    _initPermissionsAndListener();
   }
 
   final List<Ringtone> _ringtones = [];
@@ -89,75 +99,133 @@ class _MyHomePageState extends State<HomePage> {
     await prefs.setStringList('ringtones', data);
   }
 
+  void _onAccepted() {
+    // TODO: Revert to default ringtone
+    print("debug_call: Call Accepted");
+  }
+
+  void _onRejected() {
+    // TODO: Change the ringtone
+    print("debug_call: Call Rejected");
+  }
+
+  Future<void> _initPermissionsAndListener() async {
+    final status = await Permission.phone.request();
+    if (!mounted) return;
+    if (status.isGranted) {
+      setState(() {
+        hasPermission = true;
+      });
+      await _callStateService.startListening();
+    } else {
+      // TODO: Better error handling and user feedback
+      setState(() {
+        hasPermission = false;
+      });
+      print("Permission denied - cannot listen to call states.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsPage()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: ListView.builder(
-        itemCount: _ringtones.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(_ringtones[index].name),
-            onTap: () async {
-              final result = await showMenu(
-                context: context,
-                position: RelativeRect.fromLTRB(100, 100, 0, 0),
-                items: [
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                  const PopupMenuItem(value: 'move_up', child: Text('Move UP')),
-                  const PopupMenuItem(
-                    value: 'move_down',
-                    child: Text('Move DOWN'),
-                  ),
-                ],
-              );
-              if (result == 'delete') {
-                setState(() {
-                  _ringtones.removeAt(index);
-                });
-                await _saveRingtones();
-              } else if (result == 'move_up') {
-                if (index > 0) {
-                  setState(() {
-                    final temp = _ringtones[index];
-                    _ringtones[index] = _ringtones[index - 1];
-                    _ringtones[index - 1] = temp;
-                  });
-                  await _saveRingtones();
-                }
-              } else if (result == 'move_down') {
-                if (index < _ringtones.length - 1) {
-                  setState(() {
-                    final temp = _ringtones[index];
-                    _ringtones[index] = _ringtones[index + 1];
-                    _ringtones[index + 1] = temp;
-                  });
-                  await _saveRingtones();
-                }
-              }
-            },
+    return !hasPermission
+        ? Scaffold(
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              title: Text(widget.title),
+            ),
+            body: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.warning, size: 64, color: Colors.amber),
+                const SizedBox(height: 16),
+                const Text(
+                  'Permission to read phone state is required to change ringtones based on call state.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                ElevatedButton(
+                  onPressed: _initPermissionsAndListener,
+                  child: const Text('Grant Permission'),
+                ),
+              ],
+            ),
+          )
+        : Scaffold(
+            appBar: AppBar(
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              title: Text(widget.title),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            body: ListView.builder(
+              itemCount: _ringtones.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(_ringtones[index].name),
+                  onTap: () async {
+                    final result = await showMenu(
+                      context: context,
+                      position: RelativeRect.fromLTRB(100, 100, 0, 0),
+                      items: [
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Delete'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'move_up',
+                          child: Text('Move UP'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'move_down',
+                          child: Text('Move DOWN'),
+                        ),
+                      ],
+                    );
+                    if (result == 'delete') {
+                      setState(() {
+                        _ringtones.removeAt(index);
+                      });
+                      await _saveRingtones();
+                    } else if (result == 'move_up') {
+                      if (index > 0) {
+                        setState(() {
+                          final temp = _ringtones[index];
+                          _ringtones[index] = _ringtones[index - 1];
+                          _ringtones[index - 1] = temp;
+                        });
+                        await _saveRingtones();
+                      }
+                    } else if (result == 'move_down') {
+                      if (index < _ringtones.length - 1) {
+                        setState(() {
+                          final temp = _ringtones[index];
+                          _ringtones[index] = _ringtones[index + 1];
+                          _ringtones[index + 1] = temp;
+                        });
+                        await _saveRingtones();
+                      }
+                    }
+                  },
+                );
+              },
+            ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: _addRingtone,
+              tooltip: 'Add a new Ringtone',
+              child: const Icon(Icons.add),
+            ),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addRingtone,
-        tooltip: 'Add a new Ringtone',
-        child: const Icon(Icons.add),
-      ),
-    );
   }
 }
