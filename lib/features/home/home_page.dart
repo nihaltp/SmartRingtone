@@ -110,7 +110,47 @@ class _MyHomePageState extends State<HomePage> {
       body: ListView.builder(
         itemCount: _ringtones.length,
         itemBuilder: (context, index) {
-          return ListTile(title: Text(_ringtones[index].name));
+          return ListTile(
+            title: Text(_ringtones[index].name),
+            onTap: () async {
+              final result = await showMenu(
+                context: context,
+                position: RelativeRect.fromLTRB(100, 100, 0, 0),
+                items: [
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                  const PopupMenuItem(value: 'move_up', child: Text('Move UP')),
+                  const PopupMenuItem(
+                    value: 'move_down',
+                    child: Text('Move DOWN'),
+                  ),
+                ],
+              );
+              if (result == 'delete') {
+                setState(() {
+                  _ringtones.removeAt(index);
+                });
+                await _saveRingtones();
+              } else if (result == 'move_up') {
+                if (index > 0) {
+                  setState(() {
+                    final temp = _ringtones[index];
+                    _ringtones[index] = _ringtones[index - 1];
+                    _ringtones[index - 1] = temp;
+                  });
+                  await _saveRingtones();
+                }
+              } else if (result == 'move_down') {
+                if (index < _ringtones.length - 1) {
+                  setState(() {
+                    final temp = _ringtones[index];
+                    _ringtones[index] = _ringtones[index + 1];
+                    _ringtones[index + 1] = temp;
+                  });
+                  await _saveRingtones();
+                }
+              }
+            },
+          );
         },
       ),
       floatingActionButton: FloatingActionButton(
