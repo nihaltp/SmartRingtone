@@ -18,7 +18,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<HomePage> {
+class _MyHomePageState extends State<HomePage> with WidgetsBindingObserver {
   final _callStateService = CallStateService();
   bool hasPhonePermission = false;
   bool hasWriteSettingsPermission = false;
@@ -26,15 +26,29 @@ class _MyHomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadRingtones();
     _callStateService.initialize(
       onAccepted: _onAccepted,
       onRejected: _onRejected,
       onIncoming: (number) {
         print("Incoming from $number");
-      }
+      },
     );
     _initPermissionsAndListener();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _initPermissionsAndListener();
+    }
   }
 
   final List<Ringtone> _ringtones = [];
