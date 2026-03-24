@@ -1,8 +1,11 @@
 package com.nihaltp.ringtone_changer
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.telephony.PhoneStateListener
 import android.telephony.TelephonyManager
 import androidx.core.app.ActivityCompat
@@ -41,6 +44,15 @@ class MainActivity: FlutterActivity() {
                 } else {
                     result.error("PERMISSION_DENIED", "Phone state permission not granted", null)
                 }
+            } else if (call.method == "canWriteSettings") {
+                result.success(Settings.System.canWrite(this))
+            } else if (call.method == "openWriteSettings") {
+                val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(intent)
+                result.success(null)
             } else {
                 result.notImplemented()
             }

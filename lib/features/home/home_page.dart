@@ -20,7 +20,8 @@ class HomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<HomePage> {
   final _callStateService = CallStateService();
-  bool hasPermission = false;
+  bool hasPhonePermission = false;
+  bool hasWriteSettingsPermission = false;
 
   @override
   void initState() {
@@ -29,6 +30,9 @@ class _MyHomePageState extends State<HomePage> {
     _callStateService.initialize(
       onAccepted: _onAccepted,
       onRejected: _onRejected,
+      onIncoming: (number) {
+        print("Incoming from $number");
+      }
     );
     _initPermissionsAndListener();
   }
@@ -110,17 +114,26 @@ class _MyHomePageState extends State<HomePage> {
   }
 
   Future<void> _initPermissionsAndListener() async {
+    final canWrite = await _callStateService.canWriteSettings();
+    if (!mounted) return;
+    setState(() {
+      hasWriteSettingsPermission = canWrite;
+    });
+
+    if (!canWrite) {
+      return;
+    }
     final status = await Permission.phone.request();
     if (!mounted) return;
     if (status.isGranted) {
       setState(() {
-        hasPermission = true;
+        hasPhonePermission = true;
       });
       await _callStateService.startListening();
     } else {
       // TODO: Better error handling and user feedback
       setState(() {
-        hasPermission = false;
+        hasPhonePermission = false;
       });
       print("Permission denied - cannot listen to call states.");
     }
@@ -128,7 +141,7 @@ class _MyHomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return !hasPermission
+    return !(hasPhonePermission && hasWriteSettingsPermission)
         ? Scaffold(
             appBar: AppBar(
               backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -139,14 +152,29 @@ class _MyHomePageState extends State<HomePage> {
               children: [
                 const Icon(Icons.warning, size: 64, color: Colors.amber),
                 const SizedBox(height: 16),
-                const Text(
-                  'Permission to read phone state is required to change ringtones based on call state.',
-                  textAlign: TextAlign.center,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    !hasWriteSettingsPermission
+                        ? 'System settings access is required to change the ringtone. Tap below, enable "Allow to modify system settings" for this app, then return and tap again.'
+                        : 'Permission to read phone state is required to change ringtones based on call state.',
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 ElevatedButton(
-                  onPressed: _initPermissionsAndListener,
-                  child: const Text('Grant Permission'),
+                  onPressed: () async {
+                    if (!hasWriteSettingsPermission) {
+                      await _callStateService.openWriteSettings();
+                      return;
+                    }
+                    await _initPermissionsAndListener();
+                  },
+                  child: Text(
+                    !hasWriteSettingsPermission
+                        ? 'Grant System Settings Access'
+                        : 'Grant Phone Permission',
+                  ),
                 ),
               ],
             ),
