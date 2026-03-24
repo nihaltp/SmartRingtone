@@ -55,9 +55,61 @@ class _SettingsPageState extends State<SettingsPage> {
                 emptySelectionAllowed: false,
               ),
             ),
+            const SizedBox(height: 32),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _buildModeSettings(),
+            ),
           ],
         ),
       ),
     );
+  }
+
+Widget _buildModeSettings() {
+    switch (selectedMode) {
+      case RingtoneMode.random:
+        return const Card(
+          key: ValueKey('random'),
+          child: ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('Random Mode Active'),
+            subtitle: Text(
+              'A new ringtone will be picked randomly from your list for every call.',
+            ),
+          ),
+        );
+      case RingtoneMode.sequential:
+        return const Card(
+          key: ValueKey('sequential'),
+          child: ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('Sequential Mode Active'),
+            subtitle: Text(
+              'The app will cycle through your ringtones in the order they appear in the list.',
+            ),
+          ),
+        );
+      case RingtoneMode.fixed:
+        return const Card(
+          key: ValueKey('fixed'),
+          child: ListTile(
+            leading: Icon(Icons.info_outline),
+            title: Text('Fixed Mode Active'),
+            subtitle: Text('Only the top ringtone in your list will be used.'),
+          ),
+        );
+      case null:
+      default:
+        return const Center(
+          key: ValueKey('none'),
+          child: Padding(
+            padding: EdgeInsets.only(top: 20),
+            child: Text(
+              'No mode selected. System default ringtone will be used.',
+            ),
+          ),
+        );
+    }
   }
 }
