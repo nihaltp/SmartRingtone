@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,6 +20,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<HomePage> with WidgetsBindingObserver {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  int? _currentlyPlayingId;
+
   final _callStateService = CallStateService();
   bool hasPhonePermission = false;
   bool hasWriteSettingsPermission = false;
@@ -40,6 +44,7 @@ class _MyHomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _audioPlayer.dispose();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -215,7 +220,36 @@ class _MyHomePageState extends State<HomePage> with WidgetsBindingObserver {
             body: ListView.builder(
               itemCount: _ringtones.length,
               itemBuilder: (context, index) {
+                final ringtone = _ringtones[index];
+                final isPlaying = _currentlyPlayingId == ringtone.id;
+
                 return ListTile(
+                  leading: IconButton(
+                    icon: isPlaying
+                        ? Icon(Icons.pause)
+                        : Icon(Icons.music_note_sharp),
+                    onPressed: () async {
+                      if (isPlaying) {
+                        await _audioPlayer.stop();
+                        setState(() {
+                          _currentlyPlayingId = null;
+                        });
+                      } else {
+                        try {
+                          await _audioPlayer.play(
+                            DeviceFileSource(ringtone.path),
+                          );
+                          setState(() {
+                            _currentlyPlayingId = ringtone.id;
+                          });
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error playing audio: $e')),
+                          );
+                        }
+                      }
+                    },
+                  ),
                   title: Text(_ringtones[index].name),
                   onTap: () async {
                     final result = await showMenu(
