@@ -204,7 +204,8 @@ class _MyHomePageState extends State<HomePage> with WidgetsBindingObserver {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const SettingsPage(),
+                        builder: (context) =>
+                            SettingsPage(ringtones: _ringtones),
                       ),
                     );
                   },
