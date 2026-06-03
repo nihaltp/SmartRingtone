@@ -86,7 +86,7 @@ fun MainScreen(
                     NavigationBarItemDefaults.colors(
                         selectedIconColor = AccentColor,
                         selectedTextColor = AccentColor,
-                        indicatorColor = AccentColor.copy(alpha = 0.05f),
+                        indicatorColor = CardBackground,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
                     )
