@@ -1,0 +1,374 @@
+def get_version_name_from_gradle
+  gradle_file = File.expand_path("../app/build.gradle.kts", __dir__)
+  unless File.exist?(gradle_file)
+    raise "Could not find app/build.gradle.kts at #{gradle_file}"
+  end
+  content = File.read(gradle_file)
+  if match = content.match(/^\s*versionName\s*=\s*"([^"]+)"/)
+    return match[1]
+  end
+  raise "Could not find versionName in app/build.gradle.kts"
+end
+
+def get_version_code_from_gradle
+  gradle_file = File.expand_path("../app/build.gradle.kts", __dir__)
+  unless File.exist?(gradle_file)
+    raise "Could not find app/build.gradle.kts at #{gradle_file}"
+  end
+  content = File.read(gradle_file)
+  if match = content.match(/^\s*versionCode\s*=\s*(\d+)/)
+    return match[1].to_i
+  end
+  raise "Could not find versionCode in app/build.gradle.kts"
+end
+
+def update_version_name(version_name:)
+  gradle_file = File.expand_path("../app/build.gradle.kts", __dir__)
+  unless File.exist?(gradle_file)
+    raise "Could not find app/build.gradle.kts at #{gradle_file}"
+  end
+  content = File.read(gradle_file)
+  updated_content = content.gsub(/^(\s*versionName\s*=\s*)"[^"]+"/, "\\1\"#{version_name}\"")
+  File.write(gradle_file, updated_content)
+end
+
+def update_version_code(version_code:)
+  gradle_file = File.expand_path("../app/build.gradle.kts", __dir__)
+  unless File.exist?(gradle_file)
+    raise "Could not find app/build.gradle.kts at #{gradle_file}"
+  end
+  content = File.read(gradle_file)
+  updated_content = content.gsub(/^(\s*versionCode\s*=\s*)\d+/, "\\1#{version_code}")
+  File.write(gradle_file, updated_content)
+end
+
+def resolve_abi_apk(device_id)
+  device_abis = `adb -s #{device_id} shell getprop ro.product.cpu.abilist`.strip
+  device_abis = `adb -s #{device_id} shell getprop ro.product.cpu.abi`.strip if device_abis.empty?
+
+  primary_abi = device_abis.split(",").first.to_s.strip
+  apk_name = case primary_abi
+             when "arm64-v8a"
+               "app-arm64-v8a-debug.apk"
+             when "armeabi-v7a"
+               "app-armeabi-v7a-debug.apk"
+             when "x86_64"
+               "app-x86_64-debug.apk"
+             when "x86"
+               "app-x86-debug.apk"
+             else
+               "app-universal-debug.apk"
+             end
+
+  split_apk = File.expand_path("../app/build/outputs/apk/debug/#{apk_name}", __dir__)
+  universal_apk = File.expand_path("../app/build/outputs/apk/debug/app-universal-debug.apk", __dir__)
+
+  File.exist?(split_apk) ? split_apk : universal_apk
+end
+
+default_platform(:android)
+
+platform :android do
+  desc "Increment patch version"
+  lane :increment_patch do
+    version = get_version_name_from_gradle
+    version_parts = version.split(".").map(&:to_i)
+    version_parts[2] += 1 # Increment patch version
+    new_version = version_parts.join(".")
+    update_version_name(version_name: new_version)
+    increment_version_code # Also increment version code when patch version is updated
+    puts "Version updated to #{new_version}"
+  end
+
+  desc "Increment minor version"
+  lane :increment_minor do
+    version = get_version_name_from_gradle
+    version_parts = version.split(".").map(&:to_i)
+    version_parts[1] += 1 # Increment minor version
+    version_parts[2] = 0  # Reset patch version
+    new_version = version_parts.join(".")
+    update_version_name(version_name: new_version)
+    increment_version_code # Also increment version code when minor version is updated
+    puts "Version updated to #{new_version}"
+  end
+
+  desc "Increment major version"
+  lane :increment_major do
+    version = get_version_name_from_gradle
+    version_parts = version.split(".").map(&:to_i)
+    version_parts[0] += 1 # Increment major version
+    version_parts[1] = 0  # Reset minor version
+    version_parts[2] = 0  # Reset patch version
+    new_version = version_parts.join(".")
+    update_version_name(version_name: new_version)
+    increment_version_code # Also increment version code when major version is updated
+    puts "Version updated to #{new_version}"
+  end
+
+  desc "Increment version code"
+  lane :increment_version_code do
+    version_code = get_version_code_from_gradle
+    new_version_code = version_code + 1 # Increment version code
+    update_version_code(version_code: new_version_code)
+    puts "Version code updated to #{new_version_code}"
+  end
+
+  desc "Print the current version name and code"
+  lane :version do
+    version_name = get_version_name_from_gradle
+    version_code = get_version_code_from_gradle
+    puts "Current version: #{version_name} (code: #{version_code})"
+  end
+
+  desc "Clean the project"
+  lane :clean do
+    gradle(task: "clean")
+  end
+
+  desc "Build the debug APK"
+  lane :build_debug do
+    gradle(task: "assembleDebug")
+  end
+
+  desc "Build the release APK"
+  lane :build_release do
+    gradle(task: "assembleRelease")
+  end
+
+  desc "Build release artifacts and create a GitHub Release"
+  lane :github_release do
+    # 1. Read version name and code
+    version_name = get_version_name_from_gradle
+    version_code = get_version_code_from_gradle
+
+    # 2. Get commits since last tag
+    last_tag = `git describe --tags --abbrev=0`.strip rescue ""
+    if last_tag.empty?
+      puts "No previous version tag found. Fetching recent commits."
+      commits_raw = `git log --oneline -n 20`.strip rescue ""
+    else
+      puts "Fetching commits since last tag: #{last_tag}"
+      commits_raw = `git log #{last_tag}..HEAD --oneline`.strip rescue ""
+    end
+
+    changelog_lines = []
+    unless commits_raw.empty?
+      commits_raw.split("\n").each do |line|
+        parts = line.split(" ", 2)
+        sha = parts[0]
+        msg = parts[1] || ""
+        # Format as "- sha  msg" to match metadata changelog style, e.g. "- 5b3993d  feat: ..."
+        changelog_lines << "- #{sha}  #{msg}"
+      end
+    end
+
+    changelog_content = changelog_lines.join("\n")
+
+    current_date = Time.now.strftime("%Y-%m-%d")
+
+    # 3. Format full metadata changelog text
+    metadata_changelog = "Smart Ringtone v#{version_name} (#{current_date})\n\n"
+    metadata_changelog += "Commits included in this release:\n"
+    metadata_changelog += changelog_content
+    metadata_changelog += "\n"
+
+    # 4. Save metadata changelog to versionCode.txt (e.g. 3.txt)
+    project_root = File.expand_path("..", __dir__)
+    changelogs_dir = File.join(project_root, "fastlane", "metadata", "android", "en-US", "changelogs")
+    require 'fileutils'
+    FileUtils.mkdir_p(changelogs_dir)
+    changelog_txt_path = File.join(changelogs_dir, "#{version_code}.txt")
+    File.write(changelog_txt_path, metadata_changelog)
+    puts "Created changelog at #{changelog_txt_path}"
+
+    # 5. Prepend new release section to CHANGELOG.md
+    changelog_md_path = File.join(project_root, "CHANGELOG.md")
+    if File.exist?(changelog_md_path)
+      content = File.read(changelog_md_path)
+      # Format new entry matching the existing style:
+      # ## [version_name] - YYYY-MM-DD
+      #
+      # Commits included in this release:
+      # - sha  msg
+      new_entry = "## [#{version_name}] - #{current_date}\n\n"
+      new_entry += "Commits included in this release:\n"
+      new_entry += changelog_content
+      new_entry += "\n\n"
+
+      if content.include?("---")
+        parts = content.split("---", 2)
+        updated_content = parts[0] + "---\n\n" + new_entry + parts[1].strip + "\n"
+      else
+        updated_content = "# Changelog\n\n#{new_entry}" + content
+      end
+      File.write(changelog_md_path, updated_content)
+      puts "Updated CHANGELOG.md"
+    end
+
+    # 6. Commit version changes
+    # Files to include:
+    #   app/build.gradle.kts
+    #   all files in fastlane/metadata/android/
+    #   CHANGELOG.md
+    puts "Committing version changes..."
+    sh("git add #{File.join(project_root, 'app', 'build.gradle.kts')}")
+    sh("git add #{File.join(project_root, 'fastlane', 'metadata', 'android')}")
+    sh("git add #{changelog_md_path}")
+
+    # Check if there are changes staged before committing to avoid empty commit errors
+    staged_changes = `git diff --cached --name-only`.strip
+    if staged_changes.empty?
+      puts "No files to commit."
+    else
+      sh("git commit -m \"chore: bump version to v#{version_name}\"")
+    end
+
+    # 7. Create local Git tag
+    tag_name = "v#{version_name}"
+    sh("git tag -d #{tag_name}") rescue nil
+    sh("git tag #{tag_name}")
+    puts "Created local git tag #{tag_name}"
+
+    # 8. Build release APKs
+    puts "Building release APKs..."
+    build_release
+
+    # 9. Push current branch and tag to GitHub
+    current_branch = `git rev-parse --abbrev-ref HEAD`.strip
+    puts "Pushing branch #{current_branch} and tag #{tag_name} to origin..."
+    sh("git push origin #{current_branch}")
+    sh("git push origin #{tag_name} --force")
+
+    # 10. Create GitHub Release using gh CLI and upload all release APKs as assets
+    # Get all .apk files in the release outputs
+    release_apk_dir = File.join(project_root, "app", "build", "outputs", "apk", "release")
+    apk_files = Dir.glob(File.join(release_apk_dir, "**", "*.apk"))
+    if apk_files.empty?
+      raise "No release APK files found to upload in #{release_apk_dir}!"
+    end
+
+    puts "Uploading the following APKs as assets:"
+    apk_files.each { |f| puts "- #{File.basename(f)}" }
+
+    # Convert apk file paths to space-separated string for command
+    # Quote the paths to handle any potential spaces or special characters
+    apk_files_str = apk_files.map { |f| "\"#{f}\"" }.join(" ")
+
+    # Delete remote release first if it already exists to avoid conflict
+    sh("gh release delete #{tag_name} --yes") rescue nil
+
+    # Run gh release create
+    puts "Creating GitHub Release #{tag_name}..."
+    sh("gh release create #{tag_name} #{apk_files_str} --title \"#{tag_name}\" -F \"#{changelog_txt_path}\"")
+    puts "GitHub Release #{tag_name} successfully created!"
+  end
+
+  desc "Run tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  desc "Capture screenshots of the application using Screengrab"
+  lane :screenshots do
+    # Resolve device ID first
+    properties = {}
+    [File.expand_path("local.properties", __dir__), File.expand_path("../local.properties", __dir__)].each do |properties_path|
+      next unless File.exist?(properties_path)
+
+      File.readlines(properties_path).each do |line|
+        next if line.strip.empty? || line.start_with?("#")
+        key, value = line.strip.split("=", 2)
+        properties[key] = value
+      end
+
+      break if properties["deviceId"] && !properties["deviceId"].strip.empty?
+    end
+
+    connected_devices = `adb devices`.scan(/^(\S+)\tdevice/).flatten
+    preferred_device_ids = [properties["deviceId"], ENV["SCREENGRAB_SPECIFIC_DEVICE"]].compact.map { |device| device.strip }.reject(&:empty?)
+
+    device_id = preferred_device_ids.find { |preferred_device_id| connected_devices.include?(preferred_device_id) }
+    if device_id.nil? && preferred_device_ids.any?
+      puts "Configured device is not connected; falling back to the first authorized adb device."
+    end
+
+    device_id ||= connected_devices.first
+
+    raise "No active Android device found!" if device_id.nil? || device_id.strip.empty?
+    puts "Using target device ID: #{device_id}"
+
+    # Build the APKs
+    gradle(task: "assembleDebug")
+    gradle(task: "assembleDebugAndroidTest")
+
+    # Uninstall existing packages to ensure a clean state
+    puts "Uninstalling previous installations..."
+    sh("adb -s #{device_id} uninstall com.nihaltp.smartringtone.debug") rescue nil
+    sh("adb -s #{device_id} uninstall com.nihaltp.smartringtone.debug.test") rescue nil
+
+    # Install both debug and test APKs
+    puts "Installing debug and test APKs..."
+    debug_apk = resolve_abi_apk(device_id)
+    android_test_apk = File.expand_path("../app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk", __dir__)
+    sh("adb -s #{device_id} install -r -t -g #{debug_apk}")
+    sh("adb -s #{device_id} install -r -t -g #{android_test_apk}")
+
+    # Silence app notifications while capturing screenshots so heads-up banners do not appear.
+    puts "Temporarily muting app notifications for screenshots..."
+    sh("adb -s #{device_id} shell appops set com.nihaltp.smartringtone.debug POST_NOTIFICATION ignore") rescue nil
+    sh("adb -s #{device_id} shell appops set com.nihaltp.smartringtone.debug.test POST_NOTIFICATION ignore") rescue nil
+
+    # Clean previous screenshots on the device
+    puts "Clearing previous screenshots on device..."
+    sh("adb -s #{device_id} shell rm -rf /sdcard/Android/data/com.nihaltp.smartringtone.debug/files/app_screengrab") rescue nil
+
+    # Query original DND state (zen_mode)
+    original_zen_mode = `adb -s #{device_id} shell settings get global zen_mode`.strip rescue "0"
+    puts "Current system DND zen_mode is: #{original_zen_mode}"
+
+    # Enable Do Not Disturb (zen_mode = 1) to block heads-up notifications
+    puts "Enabling Do Not Disturb to suppress system notifications..."
+    sh("adb -s #{device_id} shell settings put global zen_mode 1") rescue nil
+
+    # Enable Demo Mode to suppress background status bar clutter
+    puts "Enabling SystemUI Demo Mode..."
+    sh("adb -s #{device_id} shell settings put global sysui_demo_allowed 1") rescue nil
+    sh("adb -s #{device_id} shell am broadcast -a com.android.systemui.demo -e command enter") rescue nil
+
+    begin
+      # Run the instrumented UI tests for locale en-US
+      puts "Running instrumented tests..."
+      sh("adb -s #{device_id} shell am instrument --no-window-animation -w -e class com.nihaltp.smartringtone.ScreenshotTest -e testLocale en-US -e appendTimestamp false com.nihaltp.smartringtone.debug.test/androidx.test.runner.AndroidJUnitRunner")
+
+      # Pull screenshots directly from the app's external files directory on the device
+      output_dir = "metadata/android/en-US/images/phoneScreenshots"
+      require 'fileutils'
+      FileUtils.mkdir_p(output_dir)
+      # Clear local screenshots dir first to ensure we don't have old ones
+      FileUtils.rm_rf(Dir.glob(File.join(output_dir, "*")))
+
+      puts "Pulling screenshots manually from external storage..."
+      sh("adb -s #{device_id} pull /sdcard/Android/data/com.nihaltp.smartringtone.debug/files/app_screengrab/en-US/images/screenshots #{output_dir}")
+
+      # Move files out of the nested folder if ADB nested them
+      nested_dir = File.join(output_dir, "screenshots")
+      if Dir.exist?(nested_dir)
+        Dir.glob(File.join(nested_dir, "*")).each do |file|
+          FileUtils.mv(file, output_dir, force: true)
+        end
+        FileUtils.rm_rf(nested_dir)
+      end
+      puts "Successfully pulled all screenshots manually to #{output_dir}!"
+    ensure
+      # Exit Demo Mode
+      puts "Exiting SystemUI Demo Mode..."
+      sh("adb -s #{device_id} shell am broadcast -a com.android.systemui.demo -e command exit") rescue nil
+
+      # Restore original DND setting precisely
+      sh("adb -s #{device_id} shell appops set com.nihaltp.smartringtone.debug POST_NOTIFICATION allow") rescue nil
+      sh("adb -s #{device_id} shell appops set com.nihaltp.smartringtone.debug.test POST_NOTIFICATION allow") rescue nil
+      puts "Restoring original DND zen_mode state to: #{original_zen_mode}..."
+      sh("adb -s #{device_id} shell settings put global zen_mode #{original_zen_mode}") rescue nil
+    end
+  end
+end

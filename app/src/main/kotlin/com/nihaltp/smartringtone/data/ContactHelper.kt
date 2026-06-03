@@ -11,6 +11,49 @@ import com.nihaltp.smartringtone.NotificationHelper
 
 object ContactHelper {
     fun getContacts(context: Context): List<Contact> {
+        if (PreferenceHelper.isScreenshotMode(context)) {
+            val ringtones = PreferenceHelper.getRingtones(context)
+            val allScores = PreferenceHelper.getAllScores(context)
+
+            fun getMappedName(score: Int): String {
+                return if (score > 0 && ringtones.isNotEmpty()) {
+                    val index = (score - 1).coerceAtMost(ringtones.size - 1)
+                    ringtones[index].name
+                } else {
+                    "System Default"
+                }
+            }
+            return listOf(
+                Contact(
+                    id = "mock_1",
+                    name = "Alice Vance",
+                    phone = "+1 (123) 456-1428",
+                    photoUri = null,
+                    currentRingtone = null,
+                    score = allScores["mock_1"] ?: 0,
+                    mappedRingtoneName = getMappedName(allScores["mock_1"] ?: 0),
+                ),
+                Contact(
+                    id = "mock_2",
+                    name = "Bob Miller",
+                    phone = "+1 (123) 456-9284",
+                    photoUri = null,
+                    currentRingtone = null,
+                    score = allScores["mock_2"] ?: 2,
+                    mappedRingtoneName = getMappedName(allScores["mock_2"] ?: 2),
+                ),
+                Contact(
+                    id = "mock_3",
+                    name = "Charlie Ross",
+                    phone = "+1 (123) 456-3841",
+                    photoUri = null,
+                    currentRingtone = null,
+                    score = allScores["mock_3"] ?: 4,
+                    mappedRingtoneName = getMappedName(allScores["mock_3"] ?: 4),
+                ),
+            )
+        }
+
         val contactsList = mutableListOf<Contact>()
         try {
             val contentResolver = context.contentResolver
@@ -203,6 +246,7 @@ object ContactHelper {
         newScore: Int,
         ringtones: List<Ringtone>? = null,
     ) {
+        if (PreferenceHelper.isScreenshotMode(context)) return
         val activeRingtones = ringtones ?: PreferenceHelper.getRingtones(context)
 
         if (newScore == 0) {
@@ -262,6 +306,7 @@ object ContactHelper {
         contacts: List<Contact>,
         ringtones: List<Ringtone>,
     ) {
+        if (PreferenceHelper.isScreenshotMode(context)) return
         val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
         val editor = prefs.edit()
         var editorModified = false
@@ -307,6 +352,15 @@ object ContactHelper {
         context: Context,
         contacts: List<Contact>,
     ) {
+        if (PreferenceHelper.isScreenshotMode(context)) {
+            val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
+            val editor = prefs.edit()
+            for (c in contacts) {
+                editor.remove("score_${c.id}")
+            }
+            editor.apply()
+            return
+        }
         val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
         val editor = prefs.edit()
 

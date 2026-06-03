@@ -6,6 +6,7 @@ import android.util.Log
 
 object CallSyncHelper {
     fun syncCallLogs(context: Context) {
+        if (PreferenceHelper.isScreenshotMode(context)) return
         val lastSyncTime = PreferenceHelper.getLastSyncTime(context)
         AppLogger.log(context, "CallSyncHelper", "syncCallLogs starting from lastSyncTime=$lastSyncTime")
         val contentResolver = context.contentResolver

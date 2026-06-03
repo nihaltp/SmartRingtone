@@ -159,8 +159,23 @@ object PreferenceHelper {
         prefs.edit().putString(KEY_CALL_LOGS, json).apply()
     }
 
+    private const val KEY_SCREENSHOT_MODE = "screenshot_mode"
+
     fun clearCallLogsHistory(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().remove(KEY_CALL_LOGS).apply()
+    }
+
+    fun isScreenshotMode(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_SCREENSHOT_MODE, false)
+    }
+
+    fun setScreenshotMode(
+        context: Context,
+        enabled: Boolean,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_SCREENSHOT_MODE, enabled).apply()
     }
 }
