@@ -1,0 +1,29 @@
+Smart Ringtone automatically adjusts contact ringtones based on your call history, helping important callers stand out when you need them most.
+
+Instead of using the same ringtone for every contact, Smart Ringtone can assign different ringtones based on missed and answered calls. Contacts who repeatedly call without reaching you can be given more noticeable ringtones, making it easier to recognize potentially important calls.
+
+Features:
+
+• Automatically update contact-specific ringtones
+• Track missed, rejected, incoming, and outgoing calls
+• Configure multiple ringtones for different priority levels
+• Manage contact scores and ringtone assignments
+• View call history and ringtone changes
+• Reset scores manually at any time
+• Works entirely on your device
+• No account required
+• No internet connection required
+
+How it works:
+
+1. Add one or more ringtones to the app.
+2. Smart Ringtone monitors call activity.
+3. Missed or rejected calls increase a contact's score.
+4. Answered calls reset the score.
+5. The contact's ringtone is updated automatically based on the configured score level.
+
+Privacy:
+
+Smart Ringtone requires access to Contacts, Phone State, and Call Logs in order to assign custom contact ringtones and track call activity. All processing is performed locally on your device. No call data, contacts, or personal information are transmitted to external servers.
+
+Smart Ringtone helps ensure that important callers are easier to notice without changing how you normally use your phone.
