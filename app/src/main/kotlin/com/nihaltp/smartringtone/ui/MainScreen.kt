@@ -37,6 +37,13 @@ val AccentColor = Color(0xFF007ACC) // VS Code/Technical Blue
 val TextPrimary = Color(0xFFF3F4F6)
 val TextSecondary = Color(0xFF9CA3AF)
 
+enum class AppTab {
+    RINGTONES,
+    CONTACTS,
+    LOG,
+    SETTINGS
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -50,14 +57,21 @@ fun MainScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val playingUri by viewModel.playingUri.collectAsState()
     val error by viewModel.error.collectAsState()
+    val isLoggingEnabled by viewModel.isLoggingEnabled.collectAsState()
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val versionName = remember { getAppVersionName(context) }
     val versionCode = remember { getAppVersionCode(context) }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(AppTab.RINGTONES) }
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(isLoggingEnabled) {
+        if (!isLoggingEnabled && selectedTab == AppTab.LOG) {
+            selectedTab = AppTab.RINGTONES
+        }
+    }
 
     val audioPickerLauncher =
         rememberLauncherForActivityResult(
@@ -76,8 +90,8 @@ fun MainScreen(
                 tonalElevation = 8.dp,
             ) {
                 NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
+                    selected = selectedTab == AppTab.RINGTONES,
+                    onClick = { selectedTab = AppTab.RINGTONES },
                     icon = { Icon(Icons.Default.MusicNote, contentDescription = stringResource(R.string.tab_ringtones)) },
                     label = { Text(stringResource(R.string.tab_ringtones)) },
                     colors =
@@ -90,8 +104,8 @@ fun MainScreen(
                         ),
                 )
                 NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
+                    selected = selectedTab == AppTab.CONTACTS,
+                    onClick = { selectedTab = AppTab.CONTACTS },
                     icon = { Icon(Icons.Default.People, contentDescription = stringResource(R.string.tab_contacts)) },
                     label = { Text(stringResource(R.string.tab_contacts)) },
                     colors =
@@ -103,23 +117,25 @@ fun MainScreen(
                             unselectedTextColor = TextSecondary,
                         ),
                 )
+                if (isLoggingEnabled) {
+                    NavigationBarItem(
+                        selected = selectedTab == AppTab.LOG,
+                        onClick = { selectedTab = AppTab.LOG },
+                        icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.tab_log)) },
+                        label = { Text(stringResource(R.string.tab_log)) },
+                        colors =
+                            NavigationBarItemDefaults.colors(
+                                selectedIconColor = AccentColor,
+                                selectedTextColor = AccentColor,
+                                indicatorColor = AccentColor.copy(alpha = 0.15f),
+                                unselectedIconColor = TextSecondary,
+                                unselectedTextColor = TextSecondary,
+                            ),
+                    )
+                }
                 NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.tab_log)) },
-                    label = { Text(stringResource(R.string.tab_log)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = AccentColor,
-                            selectedTextColor = AccentColor,
-                            indicatorColor = AccentColor.copy(alpha = 0.15f),
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                        ),
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
+                    selected = selectedTab == AppTab.SETTINGS,
+                    onClick = { selectedTab = AppTab.SETTINGS },
                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.tab_settings)) },
                     label = { Text(stringResource(R.string.tab_settings)) },
                     colors =
@@ -157,7 +173,7 @@ fun MainScreen(
                 } else {
                     // Tab Contents
                     when (selectedTab) {
-                        0 ->
+                        AppTab.RINGTONES ->
                             RingtonesTab(
                                 ringtones = ringtones,
                                 playingUri = playingUri,
@@ -166,7 +182,7 @@ fun MainScreen(
                                 onMove = { index, up -> viewModel.moveRingtone(index, up) },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },
                             )
-                        1 ->
+                        AppTab.CONTACTS ->
                             ContactsTab(
                                 contacts = contacts,
                                 ringtones = ringtones,
@@ -177,12 +193,12 @@ fun MainScreen(
                                 onResetAll = { viewModel.resetAllScores() },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },
                             )
-                        2 ->
+                        AppTab.LOG ->
                             CallLogsTab(
                                 callLogs = callLogs,
                                 onClear = { viewModel.clearHistory() },
                             )
-                        3 ->
+                        AppTab.SETTINGS ->
                             SettingsTab(
                                 viewModel = viewModel,
                             )
