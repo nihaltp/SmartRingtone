@@ -41,11 +41,7 @@ fun ContactsTab(
 
     val sortedAndFilteredContacts =
         remember(contacts, searchQuery, sortBy, sortAscending) {
-            val filtered =
-                contacts.filter {
-                    it.name.contains(searchQuery, ignoreCase = true) ||
-                        it.phone.contains(searchQuery)
-                }
+            val filtered = ContactSearchHelper.filterContacts(contacts, searchQuery)
             when (sortBy) {
                 ContactSortOrder.NAME -> {
                     if (sortAscending) {
