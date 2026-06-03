@@ -89,33 +89,28 @@ fun MainScreen(
                 containerColor = CardBackground,
                 tonalElevation = 8.dp,
             ) {
+                val tabColors =
+                    NavigationBarItemDefaults.colors(
+                        selectedIconColor = AccentColor,
+                        selectedTextColor = AccentColor,
+                        indicatorColor = AccentColor.copy(alpha = 0.05f),
+                        unselectedIconColor = TextSecondary,
+                        unselectedTextColor = TextSecondary,
+                    )
+
                 NavigationBarItem(
                     selected = selectedTab == AppTab.RINGTONES,
                     onClick = { selectedTab = AppTab.RINGTONES },
                     icon = { Icon(Icons.Default.MusicNote, contentDescription = stringResource(R.string.tab_ringtones)) },
                     label = { Text(stringResource(R.string.tab_ringtones)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = AccentColor,
-                            selectedTextColor = AccentColor,
-                            indicatorColor = AccentColor.copy(alpha = 0.15f),
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                        ),
+                    colors = tabColors,
                 )
                 NavigationBarItem(
                     selected = selectedTab == AppTab.CONTACTS,
                     onClick = { selectedTab = AppTab.CONTACTS },
                     icon = { Icon(Icons.Default.People, contentDescription = stringResource(R.string.tab_contacts)) },
                     label = { Text(stringResource(R.string.tab_contacts)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = AccentColor,
-                            selectedTextColor = AccentColor,
-                            indicatorColor = AccentColor.copy(alpha = 0.15f),
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                        ),
+                    colors = tabColors,
                 )
                 if (isLoggingEnabled) {
                     NavigationBarItem(
@@ -123,14 +118,7 @@ fun MainScreen(
                         onClick = { selectedTab = AppTab.LOG },
                         icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.tab_log)) },
                         label = { Text(stringResource(R.string.tab_log)) },
-                        colors =
-                            NavigationBarItemDefaults.colors(
-                                selectedIconColor = AccentColor,
-                                selectedTextColor = AccentColor,
-                                indicatorColor = AccentColor.copy(alpha = 0.15f),
-                                unselectedIconColor = TextSecondary,
-                                unselectedTextColor = TextSecondary,
-                            ),
+                        colors = tabColors,
                     )
                 }
                 NavigationBarItem(
@@ -138,14 +126,7 @@ fun MainScreen(
                     onClick = { selectedTab = AppTab.SETTINGS },
                     icon = { Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.tab_settings)) },
                     label = { Text(stringResource(R.string.tab_settings)) },
-                    colors =
-                        NavigationBarItemDefaults.colors(
-                            selectedIconColor = AccentColor,
-                            selectedTextColor = AccentColor,
-                            indicatorColor = AccentColor.copy(alpha = 0.15f),
-                            unselectedIconColor = TextSecondary,
-                            unselectedTextColor = TextSecondary,
-                        ),
+                    colors = tabColors,
                 )
             }
         },
