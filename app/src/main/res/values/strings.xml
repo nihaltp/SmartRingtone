@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Smart Ringtone</string>
+    <string name="app_subtitle">Call-Score Ringtone Customizer</string>
+    <string name="setup_permissions">Setup Permissions</string>
+    <string name="permissions_required">Permissions Required</string>
+    <string name="permissions_desc">Smart Ringtone requires access to Contacts (to set custom contact ringtones) and Call Logs/Phone State (to dynamically adjust scores when you miss or answer calls).</string>
+    <string name="grant_permissions">Grant Permissions</string>
+    
+    <string name="tab_ringtones">Ringtones</string>
+    <string name="tab_contacts">Contacts</string>
+    <string name="tab_log">Log</string>
+    
+    <string name="ringtone_sequence">Ringtone Sequence</string>
+    <string name="add">Add</string>
+    <string name="no_ringtones">No ringtones added. Tap Add to select audio files from your device.</string>
+    <string name="plays_on_score">Plays on Call Score = %1$d</string>
+    
+    <string name="search_contacts">Search contacts...</string>
+    <string name="reset_all">Reset All</string>
+    <string name="no_contacts">No contacts found.</string>
+    
+    <string name="missed_badge">%1$d Missed</string>
+    <string name="avoided_badge">%1$d Avoided</string>
+    <string name="no_misses_badge">0 Missed</string>
+    
+    <string name="active_ringtone">Active: %1$s</string>
+    <string name="original_custom">Original (Custom)</string>
+    <string name="system_default">System Default</string>
+    <string name="reset">Reset</string>
+    
+    <string name="tracked_call_history">Tracked Call History</string>
+    <string name="clear_logs">Clear Logs</string>
+    <string name="no_logs">No call logs tracked yet. Calls will be recorded here automatically.</string>
+    
+    <string name="incoming">Incoming</string>
+    <string name="outgoing">Outgoing</string>
+    <string name="answered">Answered</string>
+    <string name="missed">Missed</string>
+    <string name="rejected">Rejected</string>
+    <string name="unanswered">Unanswered</string>
+    
+    <string name="content_desc_sync_logs">Sync Logs</string>
+    <string name="content_desc_play">Play</string>
+    <string name="content_desc_pause">Pause</string>
+    <string name="content_desc_move_up">Move Up</string>
+    <string name="content_desc_move_down">Move Down</string>
+    <string name="content_desc_delete">Delete</string>
+    <string name="content_desc_play_custom_ringtone">Play custom ringtone</string>
+</resources>
