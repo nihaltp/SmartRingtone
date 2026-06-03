@@ -76,20 +76,23 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     RingtoneHelper.addRingtoneFromUri(context, uri)
                 }
             if (added != null) {
-                withContext(Dispatchers.IO) {
-                    val currentList = PreferenceHelper.getRingtones(context).toMutableList()
-                    currentList.add(added)
-                    PreferenceHelper.saveRingtones(context, currentList)
-
-                    // Update contacts' ringtones based on new list
-                    val contactsList = ContactHelper.getContacts(context)
-                    for (c in contactsList) {
-                        if (c.score > 0) {
-                            ContactHelper.updateContactRingtoneBasedOnScore(context, c.id, c.score)
-                        }
+                val currentList =
+                    withContext(Dispatchers.IO) {
+                        val list = PreferenceHelper.getRingtones(context).toMutableList()
+                        list.add(added)
+                        PreferenceHelper.saveRingtones(context, list)
+                        list
                     }
+                _ringtones.value = currentList
+                _isLoading.value = false
+
+                // Background update of contacts in system DB
+                viewModelScope.launch(Dispatchers.IO) {
+                    val contactsList = ContactHelper.getContacts(context)
+                    ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                    val loadedContacts = ContactHelper.getContacts(context)
+                    _contacts.value = loadedContacts
                 }
-                loadData()
             } else {
                 _isLoading.value = false
             }
@@ -99,20 +102,35 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     fun deleteRingtone(ringtoneId: Int) {
         viewModelScope.launch {
             _isLoading.value = true
-            withContext(Dispatchers.IO) {
-                val currentList = PreferenceHelper.getRingtones(context).toMutableList()
-                currentList.removeAll { it.id == ringtoneId }
-                PreferenceHelper.saveRingtones(context, currentList)
+            val currentList =
+                withContext(Dispatchers.IO) {
+                    val list = PreferenceHelper.getRingtones(context).toMutableList()
+                    list.removeAll { it.id == ringtoneId }
+                    PreferenceHelper.saveRingtones(context, list)
+                    list
+                }
+            _ringtones.value = currentList
 
-                // Update contacts' ringtones (in case their mapped ringtone changed index or was deleted)
-                val contactsList = ContactHelper.getContacts(context)
-                for (c in contactsList) {
-                    if (c.score > 0) {
-                        ContactHelper.updateContactRingtoneBasedOnScore(context, c.id, c.score)
+            val updatedContacts =
+                _contacts.value.map { contact ->
+                    if (contact.score > 0) {
+                        val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
+                        val mappedName = if (currentList.isNotEmpty()) currentList[idx].name else "System Default"
+                        contact.copy(mappedRingtoneName = mappedName)
+                    } else {
+                        contact
                     }
                 }
+            _contacts.value = updatedContacts
+            _isLoading.value = false
+
+            // Background update of contacts in system DB
+            viewModelScope.launch(Dispatchers.IO) {
+                val contactsList = ContactHelper.getContacts(context)
+                ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                val loadedContacts = ContactHelper.getContacts(context)
+                _contacts.value = loadedContacts
             }
-            loadData()
         }
     }
 
@@ -122,52 +140,81 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     ) {
         viewModelScope.launch {
             _isLoading.value = true
-            withContext(Dispatchers.IO) {
-                val currentList = PreferenceHelper.getRingtones(context).toMutableList()
-                val targetIndex = if (up) index - 1 else index + 1
-                if (targetIndex in 0 until currentList.size) {
-                    val temp = currentList[index]
-                    currentList[index] = currentList[targetIndex]
-                    currentList[targetIndex] = temp
-                    PreferenceHelper.saveRingtones(context, currentList)
+            val currentList =
+                withContext(Dispatchers.IO) {
+                    val list = PreferenceHelper.getRingtones(context).toMutableList()
+                    val targetIndex = if (up) index - 1 else index + 1
+                    if (targetIndex in 0 until list.size) {
+                        val temp = list[index]
+                        list[index] = list[targetIndex]
+                        list[targetIndex] = temp
+                        PreferenceHelper.saveRingtones(context, list)
+                    }
+                    list
+                }
 
-                    // Re-apply ringtones as their index maps might have changed
-                    val contactsList = ContactHelper.getContacts(context)
-                    for (c in contactsList) {
-                        if (c.score > 0) {
-                            ContactHelper.updateContactRingtoneBasedOnScore(context, c.id, c.score)
-                        }
+            _ringtones.value = currentList
+            val updatedContacts =
+                _contacts.value.map { contact ->
+                    if (contact.score > 0 && currentList.isNotEmpty()) {
+                        val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
+                        contact.copy(mappedRingtoneName = currentList[idx].name)
+                    } else {
+                        contact
                     }
                 }
+            _contacts.value = updatedContacts
+            _isLoading.value = false
+
+            // Background update of contacts in system DB
+            viewModelScope.launch(Dispatchers.IO) {
+                val contactsList = ContactHelper.getContacts(context)
+                ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                val loadedContacts = ContactHelper.getContacts(context)
+                _contacts.value = loadedContacts
             }
-            loadData()
         }
     }
 
     fun resetContactScore(contactId: String) {
         viewModelScope.launch {
-            _isLoading.value = true
-            withContext(Dispatchers.IO) {
+            val updatedContacts =
+                _contacts.value.map { contact ->
+                    if (contact.id == contactId) {
+                        contact.copy(score = 0, mappedRingtoneName = "System Default", currentRingtone = null)
+                    } else {
+                        contact
+                    }
+                }
+            _contacts.value = updatedContacts
+
+            // Background update of preference and contact in system DB
+            viewModelScope.launch(Dispatchers.IO) {
                 PreferenceHelper.setContactScore(context, contactId, 0)
                 ContactHelper.updateContactRingtoneBasedOnScore(context, contactId, 0)
+                val loadedContacts = ContactHelper.getContacts(context)
+                _contacts.value = loadedContacts
             }
-            loadData()
         }
     }
 
     fun resetAllScores() {
         viewModelScope.launch {
             _isLoading.value = true
-            withContext(Dispatchers.IO) {
-                val contactsList = ContactHelper.getContacts(context)
-                for (c in contactsList) {
-                    if (c.score > 0) {
-                        PreferenceHelper.setContactScore(context, c.id, 0)
-                        ContactHelper.updateContactRingtoneBasedOnScore(context, c.id, 0)
-                    }
+            val updatedContacts =
+                _contacts.value.map { contact ->
+                    contact.copy(score = 0, mappedRingtoneName = "System Default", currentRingtone = null)
                 }
+            _contacts.value = updatedContacts
+            _isLoading.value = false
+
+            // Background update of preferences and contacts in system DB
+            viewModelScope.launch(Dispatchers.IO) {
+                val contactsList = ContactHelper.getContacts(context)
+                ContactHelper.resetAllScores(context, contactsList)
+                val loadedContacts = ContactHelper.getContacts(context)
+                _contacts.value = loadedContacts
             }
-            loadData()
         }
     }
 
@@ -177,7 +224,8 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
             withContext(Dispatchers.IO) {
                 PreferenceHelper.clearCallLogsHistory(context)
             }
-            loadData()
+            _callLogs.value = emptyList()
+            _isLoading.value = false
         }
     }
 

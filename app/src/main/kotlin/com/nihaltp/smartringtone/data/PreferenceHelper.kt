@@ -84,6 +84,37 @@ object PreferenceHelper {
             .apply()
     }
 
+    fun getAllScores(context: Context): Map<String, Int> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.all.filterKeys { it.startsWith(KEY_SCORE_PREFIX) }
+            .map { (key, value) ->
+                val contactId = key.substring(KEY_SCORE_PREFIX.length)
+                contactId to ((value as? Number)?.toInt() ?: 0)
+            }.toMap()
+    }
+
+    fun getAllOriginalRingtones(context: Context): Map<String, String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.all.filterKeys { it.startsWith(KEY_ORIGINAL_RINGTONE_PREFIX) }
+            .map { (key, value) ->
+                val contactId = key.substring(KEY_ORIGINAL_RINGTONE_PREFIX.length)
+                contactId to ((value as? String) ?: "")
+            }.toMap()
+    }
+
+    fun clearAllContactScores(
+        context: Context,
+        contactIds: List<String>,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        for (id in contactIds) {
+            editor.remove(KEY_SCORE_PREFIX + id)
+            editor.remove(KEY_ORIGINAL_RINGTONE_PREFIX + id)
+        }
+        editor.apply()
+    }
+
     fun getLastSyncTime(context: Context): Long {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val defaultVal = System.currentTimeMillis()

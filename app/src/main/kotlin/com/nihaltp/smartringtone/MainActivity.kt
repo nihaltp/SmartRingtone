@@ -21,13 +21,19 @@ class MainActivity : ComponentActivity() {
     private val viewModel: RingtoneChangerViewModel by viewModels()
     private val hasPermissionsState = mutableStateOf(false)
 
-    private val requiredPermissions =
-        arrayOf(
-            Manifest.permission.READ_CONTACTS,
-            Manifest.permission.WRITE_CONTACTS,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG,
-        )
+    private val requiredPermissions by lazy {
+        val list =
+            mutableListOf(
+                Manifest.permission.READ_CONTACTS,
+                Manifest.permission.WRITE_CONTACTS,
+                Manifest.permission.READ_PHONE_STATE,
+                Manifest.permission.READ_CALL_LOG,
+            )
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            list.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        list.toTypedArray()
+    }
 
     private val requestPermissionLauncher =
         registerForActivityResult(

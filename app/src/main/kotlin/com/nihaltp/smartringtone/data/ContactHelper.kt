@@ -1,11 +1,13 @@
 package com.nihaltp.smartringtone.data
 
+import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.provider.ContactsContract
 import android.util.Log
+import com.nihaltp.smartringtone.NotificationHelper
 
 object ContactHelper {
     fun getContacts(context: Context): List<Contact> {
@@ -13,6 +15,8 @@ object ContactHelper {
         try {
             val contentResolver = context.contentResolver
             val ringtones = PreferenceHelper.getRingtones(context)
+            val allScores = PreferenceHelper.getAllScores(context)
+            val allOriginals = PreferenceHelper.getAllOriginalRingtones(context)
 
             val cursor =
                 contentResolver.query(
@@ -22,6 +26,7 @@ object ContactHelper {
                         ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
                         ContactsContract.CommonDataKinds.Phone.NUMBER,
                         ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
+                        ContactsContract.Contacts.CUSTOM_RINGTONE,
                     ),
                     null,
                     null,
@@ -33,6 +38,7 @@ object ContactHelper {
                 val nameCol = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numCol = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
                 val photoCol = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI)
+                val ringtoneCol = it.getColumnIndex(ContactsContract.Contacts.CUSTOM_RINGTONE)
 
                 val seenIds = mutableSetOf<String>()
 
@@ -45,16 +51,16 @@ object ContactHelper {
                     val phone = it.getString(numCol) ?: ""
                     val photoUri = it.getString(photoCol)
 
-                    val customRingtone = getContactCurrentRingtoneUri(context, contactId)
-                    val score = PreferenceHelper.getContactScore(context, contactId)
+                    val customRingtone = if (ringtoneCol >= 0) it.getString(ringtoneCol) else null
+                    val score = allScores[contactId] ?: 0
 
                     val mappedRingtoneName =
                         if (score > 0 && ringtones.isNotEmpty()) {
                             val index = (score - 1).coerceAtMost(ringtones.size - 1)
                             ringtones[index].name
                         } else {
-                            val original = PreferenceHelper.getOriginalRingtone(context, contactId)
-                            if (original != null && original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
+                            val original = allOriginals[contactId]
+                            if (!original.isNullOrEmpty() && original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
                                 "Original (Custom)"
                             } else {
                                 "System Default"
@@ -195,8 +201,9 @@ object ContactHelper {
         context: Context,
         contactId: String,
         newScore: Int,
+        ringtones: List<Ringtone>? = null,
     ) {
-        val ringtones = PreferenceHelper.getRingtones(context)
+        val activeRingtones = ringtones ?: PreferenceHelper.getRingtones(context)
 
         if (newScore == 0) {
             // Restore original ringtone
@@ -219,11 +226,118 @@ object ContactHelper {
             }
 
             // Set the custom ringtone based on score
-            if (ringtones.isNotEmpty()) {
-                val index = (newScore - 1).coerceAtMost(ringtones.size - 1)
-                val ringtoneUri = ringtones[index].uri
+            if (activeRingtones.isNotEmpty()) {
+                val index = (newScore - 1).coerceAtMost(activeRingtones.size - 1)
+                val ringtoneUri = activeRingtones[index].uri
                 setContactRingtone(context, contactId, ringtoneUri)
             }
+        }
+    }
+
+    fun updateContactsRingtones(
+        context: Context,
+        updates: List<Pair<String, String?>>,
+    ): Boolean {
+        if (updates.isEmpty()) return true
+        val ops = ArrayList<ContentProviderOperation>()
+        for ((contactId, ringtoneUri) in updates) {
+            val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId.toLong())
+            val op =
+                ContentProviderOperation.newUpdate(contactUri)
+                    .withValue(ContactsContract.Contacts.CUSTOM_RINGTONE, ringtoneUri)
+                    .build()
+            ops.add(op)
+        }
+        return try {
+            context.contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+            true
+        } catch (e: Exception) {
+            Log.e("ContactHelper", "Failed to batch update ringtones", e)
+            false
+        }
+    }
+
+    fun updateContactsRingtonesBasedOnScores(
+        context: Context,
+        contacts: List<Contact>,
+        ringtones: List<Ringtone>,
+    ) {
+        val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+        var editorModified = false
+
+        val updates = mutableListOf<Pair<String, String?>>()
+        val scoredContacts = contacts.filter { it.score > 0 }
+
+        if (scoredContacts.isEmpty()) return
+
+        for (c in scoredContacts) {
+            if (ringtones.isNotEmpty()) {
+                val index = (c.score - 1).coerceAtMost(ringtones.size - 1)
+                val ringtoneUri = ringtones[index].uri
+
+                // Backup original if not backed up yet
+                val origKey = "orig_rt_${c.id}"
+                val currentBackup = prefs.getString(origKey, null)
+                if (currentBackup == null) {
+                    val backupVal = c.currentRingtone ?: PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER
+                    editor.putString(origKey, backupVal)
+                    editorModified = true
+                }
+                updates.add(c.id to ringtoneUri)
+            }
+        }
+        if (editorModified) {
+            editor.apply()
+        }
+
+        if (updates.isNotEmpty()) {
+            val total = updates.size
+            val chunkSize = 50
+            for (i in 0 until total step chunkSize) {
+                val chunk = updates.subList(i, minOf(i + chunkSize, total))
+                updateContactsRingtones(context, chunk)
+                NotificationHelper.showProgressNotification(context, minOf(i + chunkSize, total), total)
+            }
+            NotificationHelper.dismissNotification(context)
+        }
+    }
+
+    fun resetAllScores(
+        context: Context,
+        contacts: List<Contact>,
+    ) {
+        val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+
+        val updates = mutableListOf<Pair<String, String?>>()
+        val scoredContacts = contacts.filter { it.score > 0 }
+
+        if (scoredContacts.isEmpty()) return
+
+        for (c in scoredContacts) {
+            editor.remove("score_${c.id}")
+            val origKey = "orig_rt_${c.id}"
+            val original = prefs.getString(origKey, null)
+            if (original != null) {
+                val uriToSet = if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) null else original
+                updates.add(c.id to uriToSet)
+                editor.remove(origKey)
+            } else {
+                updates.add(c.id to null)
+            }
+        }
+        editor.apply()
+
+        if (updates.isNotEmpty()) {
+            val total = updates.size
+            val chunkSize = 50
+            for (i in 0 until total step chunkSize) {
+                val chunk = updates.subList(i, minOf(i + chunkSize, total))
+                updateContactsRingtones(context, chunk)
+                NotificationHelper.showProgressNotification(context, minOf(i + chunkSize, total), total)
+            }
+            NotificationHelper.dismissNotification(context)
         }
     }
 }
