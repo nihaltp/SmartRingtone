@@ -19,6 +19,9 @@
     <string name="search_contacts">Search contacts...</string>
     <string name="reset_all">Reset All</string>
     <string name="no_contacts">No contacts found.</string>
+    <string name="sort_by">Sort by:</string>
+    <string name="sort_score">Score</string>
+    <string name="sort_name">Name</string>
 
     <string name="missed_badge">%1$d Missed</string>
     <string name="avoided_badge">%1$d Avoided</string>

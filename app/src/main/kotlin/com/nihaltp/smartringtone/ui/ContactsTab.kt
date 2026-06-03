@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,8 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nihaltp.smartringtone.R
-import com.nihaltp.smartringtone.data.Contact
-import com.nihaltp.smartringtone.data.Ringtone
+import com.nihaltp.smartringtone.data.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,11 +36,43 @@ fun ContactsTab(
     onResetAll: () -> Unit,
     onTogglePlay: (String) -> Unit,
 ) {
-    val filteredContacts =
-        remember(contacts, searchQuery) {
-            contacts.filter {
-                it.name.contains(searchQuery, ignoreCase = true) ||
-                    it.phone.contains(searchQuery)
+    var sortBy by rememberSaveable { mutableStateOf(ContactSortOrder.SCORE) }
+    var sortAscending by rememberSaveable { mutableStateOf(false) }
+
+    val sortedAndFilteredContacts =
+        remember(contacts, searchQuery, sortBy, sortAscending) {
+            val filtered =
+                contacts.filter {
+                    it.name.contains(searchQuery, ignoreCase = true) ||
+                        it.phone.contains(searchQuery)
+                }
+            when (sortBy) {
+                ContactSortOrder.NAME -> {
+                    if (sortAscending) {
+                        filtered.sortedWith(
+                            compareBy<Contact> { it.name.lowercase() }
+                                .thenByDescending { it.score },
+                        )
+                    } else {
+                        filtered.sortedWith(
+                            compareByDescending<Contact> { it.name.lowercase() }
+                                .thenByDescending { it.score },
+                        )
+                    }
+                }
+                ContactSortOrder.SCORE -> {
+                    if (sortAscending) {
+                        filtered.sortedWith(
+                            compareBy<Contact> { it.score }
+                                .thenBy { it.name.lowercase() },
+                        )
+                    } else {
+                        filtered.sortedWith(
+                            compareByDescending<Contact> { it.score }
+                                .thenBy { it.name.lowercase() },
+                        )
+                    }
+                }
             }
         }
 
@@ -177,9 +209,56 @@ fun ContactsTab(
             }
         }
 
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            Text(
+                text = stringResource(R.string.sort_by),
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+
+            SortChip(
+                text = stringResource(R.string.sort_score),
+                selected = sortBy == ContactSortOrder.SCORE,
+                ascending = sortAscending,
+                onClick = {
+                    if (sortBy == ContactSortOrder.SCORE) {
+                        sortAscending = !sortAscending
+                    } else {
+                        sortBy = ContactSortOrder.SCORE
+                        sortAscending = false
+                    }
+                },
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            SortChip(
+                text = stringResource(R.string.sort_name),
+                selected = sortBy == ContactSortOrder.NAME,
+                ascending = sortAscending,
+                onClick = {
+                    if (sortBy == ContactSortOrder.NAME) {
+                        sortAscending = !sortAscending
+                    } else {
+                        sortBy = ContactSortOrder.NAME
+                        sortAscending = true
+                    }
+                },
+            )
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (filteredContacts.isEmpty()) {
+        if (sortedAndFilteredContacts.isEmpty()) {
             Box(
                 modifier =
                     Modifier
@@ -201,7 +280,7 @@ fun ContactsTab(
                         .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(filteredContacts) { contact ->
+                items(sortedAndFilteredContacts) { contact ->
                     ContactCard(
                         contact = contact,
                         ringtones = ringtones,
@@ -354,6 +433,47 @@ fun ContactCard(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun SortChip(
+    text: String,
+    selected: Boolean,
+    ascending: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(6.dp),
+        color = if (selected) AccentColor.copy(alpha = 0.15f) else CardBackground,
+        border =
+            BorderStroke(
+                width = 1.dp,
+                color = if (selected) AccentColor else BorderColor,
+            ),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                color = if (selected) AccentColor else TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                fontFamily = FontFamily.Monospace,
+            )
+            if (selected) {
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    imageVector = if (ascending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                    contentDescription = null,
+                    tint = AccentColor,
+                    modifier = Modifier.size(14.dp),
+                )
             }
         }
     }
