@@ -7,6 +7,7 @@ import android.util.Log
 object CallSyncHelper {
     fun syncCallLogs(context: Context) {
         val lastSyncTime = PreferenceHelper.getLastSyncTime(context)
+        AppLogger.log(context, "CallSyncHelper", "syncCallLogs starting from lastSyncTime=$lastSyncTime")
         val contentResolver = context.contentResolver
 
         // Query all calls since lastSyncTime, sorted ASCENDING so we process them chronologically
@@ -58,6 +59,7 @@ object CallSyncHelper {
             PreferenceHelper.setLastSyncTime(context, System.currentTimeMillis())
         } catch (e: SecurityException) {
             Log.e("CallSyncHelper", "Permission denial accessing call logs", e)
+            AppLogger.log(context, "CallSyncHelper", "Permission denial accessing call logs", e)
         }
     }
 
@@ -68,6 +70,7 @@ object CallSyncHelper {
         duration: Long,
         date: Long,
     ) {
+        AppLogger.log(context, "CallSyncHelper", "processCall: number=$number, type=$type, duration=$duration, date=$date")
         val contactId = ContactHelper.getContactIdFromNumber(context, number) ?: return
         val contactName = ContactHelper.getContactName(context, contactId)
 
@@ -134,6 +137,7 @@ object CallSyncHelper {
                 )
             PreferenceHelper.addCallLogEntry(context, entry)
             Log.d("CallSyncHelper", "Processed call from $number: Score $currentScore -> $newScore ($scoreChangeText)")
+            AppLogger.log(context, "CallSyncHelper", "Processed call from $number: Score $currentScore -> $newScore ($scoreChangeText)")
         }
     }
 }
