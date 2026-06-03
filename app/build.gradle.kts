@@ -112,6 +112,14 @@ dependencies {
     // Tooling/Test
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.5.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:5.8.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 }
 
 // https://stackoverflow.com/questions/70917287/how-to-assign-different-versioncode-for-multiple-architecture-apks-built-with-fl/70942242#70942242

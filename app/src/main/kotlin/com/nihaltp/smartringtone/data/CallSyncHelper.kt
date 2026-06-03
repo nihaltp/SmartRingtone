@@ -55,8 +55,10 @@ object CallSyncHelper {
                 }
             }
 
-            // Update the last sync time to now
-            PreferenceHelper.setLastSyncTime(context, System.currentTimeMillis())
+            // Only update the last sync time if we actually processed call logs with a newer timestamp
+            if (newLastSyncTime > lastSyncTime) {
+                PreferenceHelper.setLastSyncTime(context, newLastSyncTime)
+            }
         } catch (e: SecurityException) {
             Log.e("CallSyncHelper", "Permission denial accessing call logs", e)
             AppLogger.log(context, "CallSyncHelper", "Permission denial accessing call logs", e)
