@@ -8,25 +8,25 @@ import android.provider.ContactsContract
 import android.util.Log
 
 object ContactHelper {
-
     fun getContacts(context: Context): List<Contact> {
         val contactsList = mutableListOf<Contact>()
         try {
             val contentResolver = context.contentResolver
             val ringtones = PreferenceHelper.getRingtones(context)
 
-            val cursor = contentResolver.query(
-                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                arrayOf(
-                    ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                    ContactsContract.CommonDataKinds.Phone.NUMBER,
-                    ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI
-                ),
-                null,
-                null,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-            )
+            val cursor =
+                contentResolver.query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                        ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                        ContactsContract.CommonDataKinds.Phone.NUMBER,
+                        ContactsContract.CommonDataKinds.Phone.PHOTO_THUMBNAIL_URI,
+                    ),
+                    null,
+                    null,
+                    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC",
+                )
 
             cursor?.use {
                 val idCol = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
@@ -48,17 +48,18 @@ object ContactHelper {
                     val customRingtone = getContactCurrentRingtoneUri(context, contactId)
                     val score = PreferenceHelper.getContactScore(context, contactId)
 
-                    val mappedRingtoneName = if (score > 0 && ringtones.isNotEmpty()) {
-                        val index = (score - 1).coerceAtMost(ringtones.size - 1)
-                        ringtones[index].name
-                    } else {
-                        val original = PreferenceHelper.getOriginalRingtone(context, contactId)
-                        if (original != null && original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
-                            "Original (Custom)"
+                    val mappedRingtoneName =
+                        if (score > 0 && ringtones.isNotEmpty()) {
+                            val index = (score - 1).coerceAtMost(ringtones.size - 1)
+                            ringtones[index].name
                         } else {
-                            "System Default"
+                            val original = PreferenceHelper.getOriginalRingtone(context, contactId)
+                            if (original != null && original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
+                                "Original (Custom)"
+                            } else {
+                                "System Default"
+                            }
                         }
-                    }
 
                     contactsList.add(
                         Contact(
@@ -68,8 +69,8 @@ object ContactHelper {
                             photoUri = photoUri,
                             currentRingtone = customRingtone,
                             score = score,
-                            mappedRingtoneName = mappedRingtoneName
-                        )
+                            mappedRingtoneName = mappedRingtoneName,
+                        ),
                     )
                 }
             }
@@ -79,19 +80,23 @@ object ContactHelper {
         return contactsList
     }
 
-    fun getContactCurrentRingtoneUri(context: Context, contactId: String): String? {
+    fun getContactCurrentRingtoneUri(
+        context: Context,
+        contactId: String,
+    ): String? {
         return try {
             val contentResolver = context.contentResolver
             val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId.toLong())
             var customRingtone: String? = null
 
-            val contactCursor = contentResolver.query(
-                contactUri,
-                arrayOf(ContactsContract.Contacts.CUSTOM_RINGTONE),
-                null,
-                null,
-                null
-            )
+            val contactCursor =
+                contentResolver.query(
+                    contactUri,
+                    arrayOf(ContactsContract.Contacts.CUSTOM_RINGTONE),
+                    null,
+                    null,
+                    null,
+                )
             contactCursor?.use { cc ->
                 if (cc.moveToFirst()) {
                     val ringtoneCol = cc.getColumnIndex(ContactsContract.Contacts.CUSTOM_RINGTONE)
@@ -107,17 +112,21 @@ object ContactHelper {
         }
     }
 
-    fun getContactIdFromNumber(context: Context, phoneNumber: String): String? {
+    fun getContactIdFromNumber(
+        context: Context,
+        phoneNumber: String,
+    ): String? {
         if (phoneNumber.isEmpty()) return null
         return try {
             val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
-            val cursor = context.contentResolver.query(
-                uri,
-                arrayOf(ContactsContract.PhoneLookup._ID),
-                null,
-                null,
-                null
-            )
+            val cursor =
+                context.contentResolver.query(
+                    uri,
+                    arrayOf(ContactsContract.PhoneLookup._ID),
+                    null,
+                    null,
+                    null,
+                )
             cursor?.use {
                 if (it.moveToFirst()) {
                     val idCol = it.getColumnIndex(ContactsContract.PhoneLookup._ID)
@@ -133,16 +142,20 @@ object ContactHelper {
         }
     }
 
-    fun getContactName(context: Context, contactId: String): String {
+    fun getContactName(
+        context: Context,
+        contactId: String,
+    ): String {
         return try {
             val uri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId.toLong())
-            val cursor = context.contentResolver.query(
-                uri,
-                arrayOf(ContactsContract.Contacts.DISPLAY_NAME),
-                null,
-                null,
-                null
-            )
+            val cursor =
+                context.contentResolver.query(
+                    uri,
+                    arrayOf(ContactsContract.Contacts.DISPLAY_NAME),
+                    null,
+                    null,
+                    null,
+                )
             cursor?.use {
                 if (it.moveToFirst()) {
                     val nameCol = it.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
@@ -158,13 +171,18 @@ object ContactHelper {
         }
     }
 
-    fun setContactRingtone(context: Context, contactId: String, ringtoneUriString: String?): Boolean {
+    fun setContactRingtone(
+        context: Context,
+        contactId: String,
+        ringtoneUriString: String?,
+    ): Boolean {
         return try {
             val contentResolver = context.contentResolver
             val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId.toLong())
-            val values = ContentValues().apply {
-                put(ContactsContract.Contacts.CUSTOM_RINGTONE, ringtoneUriString)
-            }
+            val values =
+                ContentValues().apply {
+                    put(ContactsContract.Contacts.CUSTOM_RINGTONE, ringtoneUriString)
+                }
             val rows = contentResolver.update(contactUri, values, null, null)
             rows > 0
         } catch (e: Exception) {
@@ -173,9 +191,13 @@ object ContactHelper {
         }
     }
 
-    fun updateContactRingtoneBasedOnScore(context: Context, contactId: String, newScore: Int) {
+    fun updateContactRingtoneBasedOnScore(
+        context: Context,
+        contactId: String,
+        newScore: Int,
+    ) {
         val ringtones = PreferenceHelper.getRingtones(context)
-        
+
         if (newScore == 0) {
             // Restore original ringtone
             val original = PreferenceHelper.getOriginalRingtone(context, contactId)

@@ -6,5 +6,5 @@ data class CallLogEntry(
     val direction: String,
     val type: String,
     val timestamp: Long,
-    val scoreChange: String
+    val scoreChange: String,
 )

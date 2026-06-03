@@ -7,5 +7,5 @@ data class Contact(
     val photoUri: String?,
     val currentRingtone: String?,
     val score: Int,
-    val mappedRingtoneName: String?
+    val mappedRingtoneName: String?,
 )

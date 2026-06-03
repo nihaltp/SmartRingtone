@@ -26,28 +26,45 @@ object PreferenceHelper {
         }
     }
 
-    fun saveRingtones(context: Context, ringtones: List<Ringtone>) {
+    fun saveRingtones(
+        context: Context,
+        ringtones: List<Ringtone>,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val json = gson.toJson(ringtones)
         prefs.edit().putString(KEY_RINGTONES, json).apply()
     }
 
-    fun getContactScore(context: Context, contactId: String): Int {
+    fun getContactScore(
+        context: Context,
+        contactId: String,
+    ): Int {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getInt(KEY_SCORE_PREFIX + contactId, 0)
     }
 
-    fun setContactScore(context: Context, contactId: String, score: Int) {
+    fun setContactScore(
+        context: Context,
+        contactId: String,
+        score: Int,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putInt(KEY_SCORE_PREFIX + contactId, score).apply()
     }
 
-    fun getOriginalRingtone(context: Context, contactId: String): String? {
+    fun getOriginalRingtone(
+        context: Context,
+        contactId: String,
+    ): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_ORIGINAL_RINGTONE_PREFIX + contactId, null)
     }
 
-    fun setOriginalRingtone(context: Context, contactId: String, uriString: String?) {
+    fun setOriginalRingtone(
+        context: Context,
+        contactId: String,
+        uriString: String?,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         if (uriString != null) {
             prefs.edit().putString(KEY_ORIGINAL_RINGTONE_PREFIX + contactId, uriString).apply()
@@ -56,7 +73,10 @@ object PreferenceHelper {
         }
     }
 
-    fun clearContactData(context: Context, contactId: String) {
+    fun clearContactData(
+        context: Context,
+        contactId: String,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit()
             .remove(KEY_SCORE_PREFIX + contactId)
@@ -75,7 +95,10 @@ object PreferenceHelper {
         return saved
     }
 
-    fun setLastSyncTime(context: Context, time: Long) {
+    fun setLastSyncTime(
+        context: Context,
+        time: Long,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putLong(KEY_LAST_SYNC_TIME, time).apply()
     }
@@ -91,7 +114,10 @@ object PreferenceHelper {
         }
     }
 
-    fun addCallLogEntry(context: Context, entry: CallLogEntry) {
+    fun addCallLogEntry(
+        context: Context,
+        entry: CallLogEntry,
+    ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val history = getCallLogsHistory(context).toMutableList()
         history.add(0, entry)

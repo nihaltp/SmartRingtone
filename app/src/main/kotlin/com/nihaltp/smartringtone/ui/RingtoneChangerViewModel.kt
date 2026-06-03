@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class RingtoneChangerViewModel(application: Application) : AndroidViewModel(application) {
-
     private val context: Context get() = getApplication()
 
     private val _ringtones = MutableStateFlow<List<Ringtone>>(emptyList())
@@ -72,15 +71,16 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     fun addRingtone(uri: Uri) {
         viewModelScope.launch {
             _isLoading.value = true
-            val added = withContext(Dispatchers.IO) {
-                RingtoneHelper.addRingtoneFromUri(context, uri)
-            }
+            val added =
+                withContext(Dispatchers.IO) {
+                    RingtoneHelper.addRingtoneFromUri(context, uri)
+                }
             if (added != null) {
                 withContext(Dispatchers.IO) {
                     val currentList = PreferenceHelper.getRingtones(context).toMutableList()
                     currentList.add(added)
                     PreferenceHelper.saveRingtones(context, currentList)
-                    
+
                     // Update contacts' ringtones based on new list
                     val contactsList = ContactHelper.getContacts(context)
                     for (c in contactsList) {
@@ -116,7 +116,10 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun moveRingtone(index: Int, up: Boolean) {
+    fun moveRingtone(
+        index: Int,
+        up: Boolean,
+    ) {
         viewModelScope.launch {
             _isLoading.value = true
             withContext(Dispatchers.IO) {
@@ -190,14 +193,15 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             try {
                 mediaPlayer?.release()
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(context, Uri.parse(uriString))
-                    prepare()
-                    start()
-                    setOnCompletionListener {
-                        stopPreview()
+                mediaPlayer =
+                    MediaPlayer().apply {
+                        setDataSource(context, Uri.parse(uriString))
+                        prepare()
+                        start()
+                        setOnCompletionListener {
+                            stopPreview()
+                        }
                     }
-                }
                 _playingUri.value = uriString
             } catch (e: Exception) {
                 stopPreview()

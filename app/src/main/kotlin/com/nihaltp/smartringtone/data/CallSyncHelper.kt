@@ -5,30 +5,31 @@ import android.provider.CallLog
 import android.util.Log
 
 object CallSyncHelper {
-
     fun syncCallLogs(context: Context) {
         val lastSyncTime = PreferenceHelper.getLastSyncTime(context)
         val contentResolver = context.contentResolver
 
         // Query all calls since lastSyncTime, sorted ASCENDING so we process them chronologically
-        val projection = arrayOf(
-            CallLog.Calls.NUMBER,
-            CallLog.Calls.TYPE,
-            CallLog.Calls.DURATION,
-            CallLog.Calls.DATE
-        )
+        val projection =
+            arrayOf(
+                CallLog.Calls.NUMBER,
+                CallLog.Calls.TYPE,
+                CallLog.Calls.DURATION,
+                CallLog.Calls.DATE,
+            )
         val selection = "${CallLog.Calls.DATE} > ?"
         val selectionArgs = arrayOf(lastSyncTime.toString())
         val sortOrder = "${CallLog.Calls.DATE} ASC"
 
         try {
-            val cursor = contentResolver.query(
-                CallLog.Calls.CONTENT_URI,
-                projection,
-                selection,
-                selectionArgs,
-                sortOrder
-            )
+            val cursor =
+                contentResolver.query(
+                    CallLog.Calls.CONTENT_URI,
+                    projection,
+                    selection,
+                    selectionArgs,
+                    sortOrder,
+                )
 
             var newLastSyncTime = lastSyncTime
 
@@ -60,7 +61,13 @@ object CallSyncHelper {
         }
     }
 
-    fun processCall(context: Context, number: String, type: Int, duration: Long, date: Long) {
+    fun processCall(
+        context: Context,
+        number: String,
+        type: Int,
+        duration: Long,
+        date: Long,
+    ) {
         val contactId = ContactHelper.getContactIdFromNumber(context, number) ?: return
         val contactName = ContactHelper.getContactName(context, contactId)
 
@@ -111,19 +118,20 @@ object CallSyncHelper {
         if (newScore != currentScore || scoreChangeText != "No Change") {
             // Update preferences
             PreferenceHelper.setContactScore(context, contactId, newScore)
-            
+
             // Update system contacts
             ContactHelper.updateContactRingtoneBasedOnScore(context, contactId, newScore)
 
             // Add call log entry to history
-            val entry = CallLogEntry(
-                number = number,
-                name = contactName,
-                direction = directionText,
-                type = typeText,
-                timestamp = date,
-                scoreChange = scoreChangeText
-            )
+            val entry =
+                CallLogEntry(
+                    number = number,
+                    name = contactName,
+                    direction = directionText,
+                    type = typeText,
+                    timestamp = date,
+                    scoreChange = scoreChangeText,
+                )
             PreferenceHelper.addCallLogEntry(context, entry)
             Log.d("CallSyncHelper", "Processed call from $number: Score $currentScore -> $newScore ($scoreChangeText)")
         }

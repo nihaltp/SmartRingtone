@@ -18,26 +18,27 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
-
     private val viewModel: RingtoneChangerViewModel by viewModels()
     private val hasPermissionsState = mutableStateOf(false)
 
-    private val requiredPermissions = arrayOf(
-        Manifest.permission.READ_CONTACTS,
-        Manifest.permission.WRITE_CONTACTS,
-        Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.READ_CALL_LOG
-    )
+    private val requiredPermissions =
+        arrayOf(
+            Manifest.permission.READ_CONTACTS,
+            Manifest.permission.WRITE_CONTACTS,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,
+        )
 
-    private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val allGranted = permissions.values.all { it }
-        hasPermissionsState.value = allGranted
-        if (allGranted) {
-            triggerSyncAndLoad()
+    private val requestPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { permissions ->
+            val allGranted = permissions.values.all { it }
+            hasPermissionsState.value = allGranted
+            if (allGranted) {
+                triggerSyncAndLoad()
+            }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
             MainScreen(
                 viewModel = viewModel,
                 hasPermissions = hasPermissionsState.value,
-                onRequestPermissions = { requestPermissions() }
+                onRequestPermissions = { requestPermissions() },
             )
         }
     }
@@ -62,9 +63,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkPermissions() {
-        val allGranted = requiredPermissions.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-        }
+        val allGranted =
+            requiredPermissions.all {
+                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+            }
         hasPermissionsState.value = allGranted
     }
 
