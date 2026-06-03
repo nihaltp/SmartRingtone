@@ -37,13 +37,6 @@ val AccentColor = Color(0xFF007ACC) // VS Code/Technical Blue
 val TextPrimary = Color(0xFFF3F4F6)
 val TextSecondary = Color(0xFF9CA3AF)
 
-enum class AppTab {
-    RINGTONES,
-    CONTACTS,
-    LOG,
-    SETTINGS
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
