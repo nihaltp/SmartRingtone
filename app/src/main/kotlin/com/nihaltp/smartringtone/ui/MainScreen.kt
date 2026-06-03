@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -472,11 +473,101 @@ fun ContactsTab(
     onResetAll: () -> Unit,
     onTogglePlay: (String) -> Unit
 ) {
-    val filteredContacts = remember(contacts, searchQuery) {
-        contacts.filter {
-            it.name.contains(searchQuery, ignoreCase = true) ||
+    val filteredContacts =
+        remember(contacts, searchQuery) {
+            contacts.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
                     it.phone.contains(searchQuery)
+            }
         }
+
+    var showResetAllDialog by remember { mutableStateOf(false) }
+    var contactToReset by remember { mutableStateOf<Contact?>(null) }
+
+    if (showResetAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetAllDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.reset_all_confirm_title),
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.reset_all_confirm_message),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onResetAll()
+                        showResetAllDialog = false
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.reset),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetAllDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    if (contactToReset != null) {
+        AlertDialog(
+            onDismissRequest = { contactToReset = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.reset_contact_confirm_title),
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.reset_contact_confirm_message, contactToReset?.name ?: ""),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        contactToReset?.let { onResetScore(it.id) }
+                        contactToReset = null
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.reset),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { contactToReset = null }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
     }
 
     Column(
@@ -568,7 +659,16 @@ fun ContactCard(
     onTogglePlay: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .then(
+                    if (contact.score > 0) {
+                        Modifier.clickable { onResetScore() }
+                    } else {
+                        Modifier
+                    },
+                ),
         shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         border = BorderStroke(1.dp, BorderColor)
