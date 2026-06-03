@@ -19,7 +19,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 
 class CallSyncUnitTest {
-
     private lateinit var mockContext: Context
     private lateinit var mockPrefs: SharedPreferences
     private lateinit var mockEditor: SharedPreferences.Editor
@@ -58,7 +57,6 @@ class CallSyncUnitTest {
         Mockito.`when`(mockEditor.putLong(any(), any())).thenReturn(mockEditor)
         Mockito.`when`(mockEditor.putString(any(), any())).thenReturn(mockEditor)
         Mockito.`when`(mockEditor.remove(any())).thenReturn(mockEditor)
-
     }
 
     @After
@@ -86,9 +84,15 @@ class CallSyncUnitTest {
         Mockito.`when`(mockNameCursor.getString(0)).thenReturn("Test Contact")
 
         // Mock ContentResolver queries sequentially
-        Mockito.`when`(mockContentResolver.query(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
-        )).thenReturn(mockLookupCursor, mockNameCursor)
+        Mockito.`when`(
+            mockContentResolver.query(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+            ),
+        ).thenReturn(mockLookupCursor, mockNameCursor)
 
         // Mock getContactScore
         Mockito.`when`(mockPrefs.getInt(eq("score_$contactId"), any())).thenReturn(0)
@@ -105,7 +109,7 @@ class CallSyncUnitTest {
             number = testNumber,
             type = CallLog.Calls.REJECTED_TYPE,
             duration = 0L,
-            date = 1000L
+            date = 1000L,
         )
 
         // Verify score was set to 2 in SharedPreferences
@@ -120,9 +124,15 @@ class CallSyncUnitTest {
         // Return empty cursor for CallLog
         val mockCallLogCursor = mock<Cursor>()
         Mockito.`when`(mockCallLogCursor.moveToNext()).thenReturn(false)
-        Mockito.`when`(mockContentResolver.query(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
-        )).thenReturn(mockCallLogCursor)
+        Mockito.`when`(
+            mockContentResolver.query(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+            ),
+        ).thenReturn(mockCallLogCursor)
 
         CallSyncHelper.syncCallLogs(mockContext)
 
@@ -150,9 +160,15 @@ class CallSyncUnitTest {
 
         // 1st query: CallLog
         // 2nd query: Phone lookup (returns null, meaning no contact matches, to skip details and verify watermark)
-        Mockito.`when`(mockContentResolver.query(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()
-        )).thenReturn(mockCallLogCursor, null)
+        Mockito.`when`(
+            mockContentResolver.query(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+            ),
+        ).thenReturn(mockCallLogCursor, null)
 
         CallSyncHelper.syncCallLogs(mockContext)
 

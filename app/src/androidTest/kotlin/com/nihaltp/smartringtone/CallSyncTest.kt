@@ -7,24 +7,24 @@ import android.provider.CallLog
 import android.provider.ContactsContract
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.rule.GrantPermissionRule
 import com.nihaltp.smartringtone.data.CallSyncHelper
 import com.nihaltp.smartringtone.data.PreferenceHelper
 import org.junit.Assert.assertEquals
-import androidx.test.rule.GrantPermissionRule
-import org.junit.Rule
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CallSyncTest {
-
     @get:Rule
-    val permissionRule: GrantPermissionRule = GrantPermissionRule.grant(
-        android.Manifest.permission.READ_CONTACTS,
-        android.Manifest.permission.WRITE_CONTACTS,
-        android.Manifest.permission.READ_CALL_LOG
-    )
+    val permissionRule: GrantPermissionRule =
+        GrantPermissionRule.grant(
+            android.Manifest.permission.READ_CONTACTS,
+            android.Manifest.permission.WRITE_CONTACTS,
+            android.Manifest.permission.READ_CALL_LOG,
+        )
 
     private lateinit var context: Context
 
@@ -49,13 +49,12 @@ class CallSyncTest {
                 number = testNumber,
                 type = CallLog.Calls.REJECTED_TYPE,
                 duration = 0L,
-                date = System.currentTimeMillis()
+                date = System.currentTimeMillis(),
             )
 
             // Assert score is incremented by 2
             val updatedScore = PreferenceHelper.getContactScore(context, contactId)
             assertEquals(2, updatedScore)
-
         } finally {
             // Clean up
             deleteContact(context, contactId)
@@ -98,13 +97,14 @@ class CallSyncTest {
         val projection = arrayOf(CallLog.Calls.DATE)
         val sortOrder = "${CallLog.Calls.DATE} DESC"
         return try {
-            val cursor = context.contentResolver.query(
-                CallLog.Calls.CONTENT_URI,
-                projection,
-                null,
-                null,
-                sortOrder
-            )
+            val cursor =
+                context.contentResolver.query(
+                    CallLog.Calls.CONTENT_URI,
+                    projection,
+                    null,
+                    null,
+                    sortOrder,
+                )
             cursor?.use {
                 if (it.moveToFirst()) {
                     it.getLong(0)
@@ -117,40 +117,51 @@ class CallSyncTest {
         }
     }
 
-    private fun insertTestContact(context: Context, name: String, number: String): String {
+    private fun insertTestContact(
+        context: Context,
+        name: String,
+        number: String,
+    ): String {
         val contentResolver = context.contentResolver
         val ops = arrayListOf<ContentProviderOperation>()
 
-        ops.add(ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-            .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
-            .build())
+        ops.add(
+            ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                .build(),
+        )
 
-        ops.add(ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-            .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-            .build())
+        ops.add(
+            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                .build(),
+        )
 
-        ops.add(ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number)
-            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
-            .build())
+        ops.add(
+            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, number)
+                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+                .build(),
+        )
 
         val results = contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
         val rawContactUri = results[0].uri ?: throw Exception("Failed to insert raw contact")
         val rawContactId = ContentUris.parseId(rawContactUri)
 
         var contactId: String? = null
-        val cursor = contentResolver.query(
-            ContactsContract.Data.CONTENT_URI,
-            arrayOf(ContactsContract.Data.CONTACT_ID),
-            "${ContactsContract.Data.RAW_CONTACT_ID} = ?",
-            arrayOf(rawContactId.toString()),
-            null
-        )
+        val cursor =
+            contentResolver.query(
+                ContactsContract.Data.CONTENT_URI,
+                arrayOf(ContactsContract.Data.CONTACT_ID),
+                "${ContactsContract.Data.RAW_CONTACT_ID} = ?",
+                arrayOf(rawContactId.toString()),
+                null,
+            )
         cursor?.use {
             if (it.moveToFirst()) {
                 contactId = it.getString(0)
@@ -159,7 +170,10 @@ class CallSyncTest {
         return contactId ?: throw Exception("Failed to get contact ID for raw contact ID $rawContactId")
     }
 
-    private fun deleteContact(context: Context, contactId: String) {
+    private fun deleteContact(
+        context: Context,
+        contactId: String,
+    ) {
         val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId.toLong())
         context.contentResolver.delete(contactUri, null, null)
     }

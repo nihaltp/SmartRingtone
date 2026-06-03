@@ -84,7 +84,10 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 AppLogger.log(
                     context,
                     "ViewModel",
-                    "loadData() completed. Ringtones: ${_ringtones.value.size}, Contacts: ${_contacts.value.size}, CallLogs: ${_callLogs.value.size}",
+                    "loadData() completed. " +
+                        "Ringtones: ${_ringtones.value.size}, " +
+                        "Contacts: ${_contacts.value.size}, " +
+                        "CallLogs: ${_callLogs.value.size}",
                 )
             } catch (e: Exception) {
                 AppLogger.log(context, "ViewModel", "loadData() failed", e)
