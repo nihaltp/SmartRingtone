@@ -429,7 +429,7 @@ fun LicensesDialog(onDismiss: () -> Unit) {
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(
-                    text = stringResource(R.string.error_dismiss).replace("Dismiss", "Close"),
+                    text = stringResource(R.string.close),
                     color = AccentColor,
                     fontWeight = FontWeight.Bold,
                 )
@@ -491,6 +491,15 @@ fun LogViewerDialog(
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = "Refresh Logs",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = stringResource(R.string.close),
                         tint = TextPrimary,
                         modifier = Modifier.size(18.dp),
                     )
@@ -580,7 +589,7 @@ fun LogViewerDialog(
                     }
                     TextButton(onClick = onDismiss) {
                         Text(
-                            text = stringResource(R.string.error_dismiss),
+                            text = stringResource(R.string.close),
                             color = TextSecondary,
                             fontSize = 13.sp,
                         )

@@ -82,6 +82,7 @@
     <string name="error_report_github">Report to GitHub</string>
     <string name="error_copy">Copy Error Details</string>
     <string name="error_dismiss">Dismiss</string>
+    <string name="close">Close</string>
 
     <!-- Logger Viewer -->
     <string name="logs_viewer_title">System Diagnostic Logs</string>
