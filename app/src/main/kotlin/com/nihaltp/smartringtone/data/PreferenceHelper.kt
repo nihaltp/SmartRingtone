@@ -22,6 +22,7 @@ object PreferenceHelper {
             val type = object : TypeToken<List<Ringtone>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
         } catch (e: Exception) {
+            AppLogger.log(context, "PreferenceHelper", "getRingtones() failed to parse: $json", e)
             emptyList()
         }
     }
@@ -141,6 +142,7 @@ object PreferenceHelper {
             val type = object : TypeToken<List<CallLogEntry>>() {}.type
             gson.fromJson(json, type) ?: emptyList()
         } catch (e: Exception) {
+            AppLogger.log(context, "PreferenceHelper", "getCallLogsHistory() failed to parse: $json", e)
             emptyList()
         }
     }

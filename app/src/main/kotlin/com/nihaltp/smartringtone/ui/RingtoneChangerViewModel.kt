@@ -11,10 +11,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class RingtoneChangerViewModel(application: Application) : AndroidViewModel(application) {
     private val context: Context get() = getApplication()
+    private val stateMutex = Mutex()
 
     private val _ringtones = MutableStateFlow<List<Ringtone>>(emptyList())
     val ringtones: StateFlow<List<Ringtone>> = _ringtones
@@ -79,76 +82,135 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
 
     fun loadData() {
         viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "loadData() started")
-            _isLoading.value = true
-            try {
-                withContext(Dispatchers.IO) {
-                    val loadedRingtones = PreferenceHelper.getRingtones(context)
-                    val loadedContacts = ContactHelper.getContacts(context)
-                    val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "loadData() started")
+                _isLoading.value = true
+                try {
+                    withContext(Dispatchers.IO) {
+                        val loadedRingtones = PreferenceHelper.getRingtones(context)
+                        val loadedContacts = ContactHelper.getContacts(context)
+                        val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
 
-                    _ringtones.value = loadedRingtones
-                    _contacts.value = loadedContacts
-                    _callLogs.value = loadedCallLogs
+                        _ringtones.value = loadedRingtones
+                        _contacts.value = loadedContacts
+                        _callLogs.value = loadedCallLogs
+                    }
+                    AppLogger.log(
+                        context,
+                        "ViewModel",
+                        "loadData() completed. " +
+                            "Ringtones: ${_ringtones.value.size}, " +
+                            "Contacts: ${_contacts.value.size}, " +
+                            "CallLogs: ${_callLogs.value.size}",
+                    )
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "loadData() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
                 }
-                AppLogger.log(
-                    context,
-                    "ViewModel",
-                    "loadData() completed. " +
-                        "Ringtones: ${_ringtones.value.size}, " +
-                        "Contacts: ${_contacts.value.size}, " +
-                        "CallLogs: ${_callLogs.value.size}",
-                )
-            } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "loadData() failed", e)
-                _error.value = e
-            } finally {
-                _isLoading.value = false
             }
         }
     }
 
     fun syncCallLogs() {
         viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "syncCallLogs() started")
-            _isLoading.value = true
-            try {
-                withContext(Dispatchers.IO) {
-                    CallSyncHelper.syncCallLogs(context)
-                    val loadedContacts = ContactHelper.getContacts(context)
-                    val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
-                    _contacts.value = loadedContacts
-                    _callLogs.value = loadedCallLogs
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "syncCallLogs() started")
+                _isLoading.value = true
+                try {
+                    withContext(Dispatchers.IO) {
+                        CallSyncHelper.syncCallLogs(context)
+                        val loadedContacts = ContactHelper.getContacts(context)
+                        val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
+                        _contacts.value = loadedContacts
+                        _callLogs.value = loadedCallLogs
+                    }
+                    AppLogger.log(context, "ViewModel", "syncCallLogs() completed successfully")
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "syncCallLogs() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
                 }
-                AppLogger.log(context, "ViewModel", "syncCallLogs() completed successfully")
-            } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "syncCallLogs() failed", e)
-                _error.value = e
-            } finally {
-                _isLoading.value = false
             }
         }
     }
 
     fun addRingtone(uri: Uri) {
         viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "addRingtone() started: uri=$uri")
-            _isLoading.value = true
-            try {
-                val added =
-                    withContext(Dispatchers.IO) {
-                        RingtoneHelper.addRingtoneFromUri(context, uri)
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "addRingtone() started: uri=$uri")
+                _isLoading.value = true
+                try {
+                    val added =
+                        withContext(Dispatchers.IO) {
+                            RingtoneHelper.addRingtoneFromUri(context, uri)
+                        }
+                    if (added != null) {
+                        val currentList =
+                            withContext(Dispatchers.IO) {
+                                val list = PreferenceHelper.getRingtones(context).toMutableList()
+                                list.add(added)
+                                PreferenceHelper.saveRingtones(context, list)
+                                list
+                            }
+                        _ringtones.value = currentList
+                        AppLogger.log(context, "ViewModel", "addRingtone() added: name=${added.name}")
+
+                        // Background update of contacts in system DB
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                val contactsList = ContactHelper.getContacts(context)
+                                ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                                val loadedContacts = ContactHelper.getContacts(context)
+                                _contacts.value = loadedContacts
+                                AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed")
+                            } catch (bgEx: Exception) {
+                                AppLogger.log(context, "ViewModel", "Background contacts ringtones sync failed", bgEx)
+                            }
+                        }
+                    } else {
+                        AppLogger.log(context, "ViewModel", "addRingtone() failed to resolve ringtone from URI")
+                        _error.value = Exception("Failed to resolve audio file from URI: $uri")
                     }
-                if (added != null) {
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "addRingtone() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
+    fun deleteRingtone(ringtoneId: Int) {
+        viewModelScope.launch {
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "deleteRingtone() started: id=$ringtoneId")
+                _isLoading.value = true
+                try {
                     val currentList =
                         withContext(Dispatchers.IO) {
                             val list = PreferenceHelper.getRingtones(context).toMutableList()
-                            list.add(added)
+                            list.removeAll { it.id == ringtoneId }
                             PreferenceHelper.saveRingtones(context, list)
                             list
                         }
                     _ringtones.value = currentList
-                    AppLogger.log(context, "ViewModel", "addRingtone() added: name=${added.name}")
+
+                    val updatedContacts =
+                        _contacts.value.map { contact ->
+                            if (contact.score > 0) {
+                                val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
+                                val mappedName = if (currentList.isNotEmpty()) currentList[idx].name else "System Default"
+                                contact.copy(mappedRingtoneName = mappedName)
+                            } else {
+                                contact
+                            }
+                        }
+                    _contacts.value = updatedContacts
+                    AppLogger.log(context, "ViewModel", "deleteRingtone() deleted from preferences")
 
                     // Background update of contacts in system DB
                     viewModelScope.launch(Dispatchers.IO) {
@@ -157,68 +219,17 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                             ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
                             val loadedContacts = ContactHelper.getContacts(context)
                             _contacts.value = loadedContacts
-                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed")
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after deletion")
                         } catch (bgEx: Exception) {
-                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync failed", bgEx)
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync after deletion failed", bgEx)
                         }
                     }
-                } else {
-                    AppLogger.log(context, "ViewModel", "addRingtone() failed to resolve ringtone from URI")
-                    _error.value = Exception("Failed to resolve audio file from URI: $uri")
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "deleteRingtone() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
                 }
-            } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "addRingtone() failed", e)
-                _error.value = e
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
-
-    fun deleteRingtone(ringtoneId: Int) {
-        viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "deleteRingtone() started: id=$ringtoneId")
-            _isLoading.value = true
-            try {
-                val currentList =
-                    withContext(Dispatchers.IO) {
-                        val list = PreferenceHelper.getRingtones(context).toMutableList()
-                        list.removeAll { it.id == ringtoneId }
-                        PreferenceHelper.saveRingtones(context, list)
-                        list
-                    }
-                _ringtones.value = currentList
-
-                val updatedContacts =
-                    _contacts.value.map { contact ->
-                        if (contact.score > 0) {
-                            val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
-                            val mappedName = if (currentList.isNotEmpty()) currentList[idx].name else "System Default"
-                            contact.copy(mappedRingtoneName = mappedName)
-                        } else {
-                            contact
-                        }
-                    }
-                _contacts.value = updatedContacts
-                AppLogger.log(context, "ViewModel", "deleteRingtone() deleted from preferences")
-
-                // Background update of contacts in system DB
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val contactsList = ContactHelper.getContacts(context)
-                        ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
-                        val loadedContacts = ContactHelper.getContacts(context)
-                        _contacts.value = loadedContacts
-                        AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after deletion")
-                    } catch (bgEx: Exception) {
-                        AppLogger.log(context, "ViewModel", "Background contacts ringtones sync after deletion failed", bgEx)
-                    }
-                }
-            } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "deleteRingtone() failed", e)
-                _error.value = e
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -228,52 +239,54 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         up: Boolean,
     ) {
         viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "moveRingtone() started: index=$index, up=$up")
-            _isLoading.value = true
-            try {
-                val currentList =
-                    withContext(Dispatchers.IO) {
-                        val list = PreferenceHelper.getRingtones(context).toMutableList()
-                        val targetIndex = if (up) index - 1 else index + 1
-                        if (targetIndex in 0 until list.size) {
-                            val temp = list[index]
-                            list[index] = list[targetIndex]
-                            list[targetIndex] = temp
-                            PreferenceHelper.saveRingtones(context, list)
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "moveRingtone() started: index=$index, up=$up")
+                _isLoading.value = true
+                try {
+                    val currentList =
+                        withContext(Dispatchers.IO) {
+                            val list = PreferenceHelper.getRingtones(context).toMutableList()
+                            val targetIndex = if (up) index - 1 else index + 1
+                            if (targetIndex in 0 until list.size) {
+                                val temp = list[index]
+                                list[index] = list[targetIndex]
+                                list[targetIndex] = temp
+                                PreferenceHelper.saveRingtones(context, list)
+                            }
+                            list
                         }
-                        list
-                    }
 
-                _ringtones.value = currentList
-                val updatedContacts =
-                    _contacts.value.map { contact ->
-                        if (contact.score > 0 && currentList.isNotEmpty()) {
-                            val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
-                            contact.copy(mappedRingtoneName = currentList[idx].name)
-                        } else {
-                            contact
+                    _ringtones.value = currentList
+                    val updatedContacts =
+                        _contacts.value.map { contact ->
+                            if (contact.score > 0 && currentList.isNotEmpty()) {
+                                val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
+                                contact.copy(mappedRingtoneName = currentList[idx].name)
+                            } else {
+                                contact
+                            }
+                        }
+                    _contacts.value = updatedContacts
+                    AppLogger.log(context, "ViewModel", "moveRingtone() completed")
+
+                    // Background update of contacts in system DB
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            val contactsList = ContactHelper.getContacts(context)
+                            ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                            val loadedContacts = ContactHelper.getContacts(context)
+                            _contacts.value = loadedContacts
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after reordering")
+                        } catch (bgEx: Exception) {
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync after reordering failed", bgEx)
                         }
                     }
-                _contacts.value = updatedContacts
-                AppLogger.log(context, "ViewModel", "moveRingtone() completed")
-
-                // Background update of contacts in system DB
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val contactsList = ContactHelper.getContacts(context)
-                        ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
-                        val loadedContacts = ContactHelper.getContacts(context)
-                        _contacts.value = loadedContacts
-                        AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after reordering")
-                    } catch (bgEx: Exception) {
-                        AppLogger.log(context, "ViewModel", "Background contacts ringtones sync after reordering failed", bgEx)
-                    }
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "moveRingtone() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
                 }
-            } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "moveRingtone() failed", e)
-                _error.value = e
-            } finally {
-                _isLoading.value = false
             }
         }
     }

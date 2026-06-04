@@ -37,6 +37,7 @@ object AppLogger {
         message: String,
         throwable: Throwable? = null,
     ) {
+        android.util.Log.d("AppLogger", "[$tag] $message", throwable)
         if (!isLoggingEnabled(context)) return
 
         val logFile = File(context.filesDir, LOG_FILE_NAME)
