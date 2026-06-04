@@ -1,10 +1,12 @@
 package com.nihaltp.smartringtone.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,8 +19,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -26,16 +30,103 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import com.nihaltp.smartringtone.R
 import com.nihaltp.smartringtone.data.AppLogger
 
-// Technical dark-mode color scheme with clean blue utility accent
-val BackgroundColor = Color(0xFF121214)
-val CardBackground = Color(0xFF1C1C1E)
-val BorderColor = Color(0xFF2C2C30)
-val AccentColor = Color(0xFF007ACC) // VS Code/Technical Blue
-val TextPrimary = Color(0xFFF3F4F6)
-val TextSecondary = Color(0xFF9CA3AF)
+data class AppColors(
+    val background: Color,
+    val cardBackground: Color,
+    val borderColor: Color,
+    val accentColor: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+)
+
+val DarkColors =
+    AppColors(
+        background = Color(0xFF121214),
+        cardBackground = Color(0xFF1C1C1E),
+        borderColor = Color(0xFF2C2C30),
+        accentColor = Color(0xFF007ACC),
+        textPrimary = Color(0xFFF3F4F6),
+        textSecondary = Color(0xFF9CA3AF),
+    )
+
+val LightColors =
+    AppColors(
+        background = Color(0xFFF8F9FA),
+        cardBackground = Color(0xFFFFFFFF),
+        borderColor = Color(0xFFE5E7EB),
+        accentColor = Color(0xFF0066B3),
+        textPrimary = Color(0xFF111827),
+        textSecondary = Color(0xFF4B5563),
+    )
+
+val LocalAppColors = staticCompositionLocalOf { DarkColors }
+
+val BackgroundColor: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.background
+
+val CardBackground: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.cardBackground
+
+val BorderColor: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.borderColor
+
+val AccentColor: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.accentColor
+
+val TextPrimary: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.textPrimary
+
+val TextSecondary: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppColors.current.textSecondary
+
+@Composable
+fun SmartRingtoneTheme(
+    themeMode: String,
+    content: @Composable () -> Unit,
+) {
+    val darkTheme =
+        when (themeMode) {
+            "light" -> false
+            "dark" -> true
+            else -> isSystemInDarkTheme()
+        }
+    val colors = if (darkTheme) DarkColors else LightColors
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            if (window != null) {
+                window.statusBarColor = colors.background.toArgb()
+                window.navigationBarColor = colors.cardBackground.toArgb()
+
+                val wic = WindowCompat.getInsetsController(window, view)
+                wic.isAppearanceLightStatusBars = !darkTheme
+                wic.isAppearanceLightNavigationBars = !darkTheme
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalAppColors provides colors) {
+        content()
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

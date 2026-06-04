@@ -88,4 +88,10 @@
     <string name="logs_empty">No logs recorded yet. Toggle Logging ON and run background actions to start tracking.</string>
     <string name="copy_to_clipboard">Copy to Clipboard</string>
     <string name="copied_to_clipboard">Logs copied to clipboard!</string>
+
+    <!-- Theme Settings -->
+    <string name="settings_theme">Appearance</string>
+    <string name="theme_light">Light Theme</string>
+    <string name="theme_dark">Dark Theme</string>
+    <string name="theme_system">System Default</string>
 </resources>

@@ -7,12 +7,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.nihaltp.smartringtone.data.CallSyncHelper
 import com.nihaltp.smartringtone.ui.MainScreen
 import com.nihaltp.smartringtone.ui.RingtoneChangerViewModel
+import com.nihaltp.smartringtone.ui.SmartRingtoneTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -49,14 +52,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        if (com.nihaltp.smartringtone.data.PreferenceHelper.isScreenshotMode(this)) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                setShowWhenLocked(true)
+                setTurnScreenOn(true)
+            }
+            window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+
         checkPermissions()
 
         setContent {
-            MainScreen(
-                viewModel = viewModel,
-                hasPermissions = hasPermissionsState.value,
-                onRequestPermissions = { requestPermissions() },
-            )
+            val themeMode by viewModel.theme.collectAsState()
+            SmartRingtoneTheme(themeMode = themeMode) {
+                MainScreen(
+                    viewModel = viewModel,
+                    hasPermissions = hasPermissionsState.value,
+                    onRequestPermissions = { requestPermissions() },
+                )
+            }
         }
     }
 
@@ -70,9 +84,10 @@ class MainActivity : ComponentActivity() {
 
     private fun checkPermissions() {
         val allGranted =
-            requiredPermissions.all {
-                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-            }
+            com.nihaltp.smartringtone.data.PreferenceHelper.isScreenshotMode(this) ||
+                requiredPermissions.all {
+                    ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+                }
         hasPermissionsState.value = allGranted
     }
 
@@ -81,6 +96,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun triggerSyncAndLoad() {
+        if (com.nihaltp.smartringtone.data.PreferenceHelper.isScreenshotMode(this)) {
+            viewModel.loadData()
+            return
+        }
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 // Sync any call log entries that occurred in the background

@@ -6,7 +6,6 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.rule.GrantPermissionRule
 import com.nihaltp.smartringtone.data.CallLogEntry
 import com.nihaltp.smartringtone.data.PreferenceHelper
 import com.nihaltp.smartringtone.data.Ringtone
@@ -29,18 +28,6 @@ class ScreenshotTest {
 
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
-
-    @get:Rule
-    val permissionRule: GrantPermissionRule =
-        GrantPermissionRule.grant(
-            android.Manifest.permission.READ_CONTACTS,
-            android.Manifest.permission.WRITE_CONTACTS,
-            android.Manifest.permission.READ_PHONE_STATE,
-            android.Manifest.permission.READ_CALL_LOG,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            "android.permission.POST_NOTIFICATIONS",
-        )
 
     @Before
     fun setUp() {
@@ -94,11 +81,27 @@ class ScreenshotTest {
 
     @Test
     fun testTakeScreenshots() {
+        // Initialise variable for tracking screenshot count
+        var screenshotCount = 1
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        try {
+            instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_WAKEUP")
+            instrumentation.uiAutomation.executeShellCommand("wm dismiss-keyguard")
+        } catch (e: Exception) {
+            // Ignore if shell commands fail
+        }
+
         val scenario = ActivityScenario.launch(MainActivity::class.java)
 
         // Hide system status bar and navigation bar dynamically to get only the app screen
         scenario.onActivity { activity ->
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                activity.setShowWhenLocked(true)
+                activity.setTurnScreenOn(true)
+            }
+            activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
             val window = activity.window
             val controller = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
             controller.hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
@@ -107,20 +110,72 @@ class ScreenshotTest {
         composeTestRule.waitForIdle()
         Thread.sleep(2000)
 
-        // Take Ringtones tab screenshot
-        Screengrab.screenshot("1")
-
-        // Switch to Contacts tab
-        composeTestRule.onNodeWithText("Contacts").performClick()
-        composeTestRule.waitForIdle()
-        Thread.sleep(1000)
-        Screengrab.screenshot("2")
-
-        // Switch to Settings tab
+        // Navigate to Settings first to set the theme to Light
         composeTestRule.onNodeWithText("Settings").performClick()
         composeTestRule.waitForIdle()
         Thread.sleep(1000)
-        Screengrab.screenshot("3")
+
+        // Turn off logging to avoid logs tab
+        composeTestRule.onNodeWithText("Enable Logging").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+
+        // Click Light Theme option
+        composeTestRule.onNodeWithText("Light Theme").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+
+        // Navigate to Ringtones and capture
+        composeTestRule.onNodeWithText("Ringtones").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate to Contacts and capture
+        composeTestRule.onNodeWithText("Contacts").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate to Settings and capture
+        composeTestRule.onNodeWithText("Settings").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate back to Settings to switch to Dark Theme
+        composeTestRule.onNodeWithText("Settings").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+
+        // Click Dark Theme option
+        composeTestRule.onNodeWithText("Dark Theme").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+
+        // Navigate to Ringtones and capture in Dark Mode
+        composeTestRule.onNodeWithText("Ringtones").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate to Contacts and capture in Dark Mode
+        composeTestRule.onNodeWithText("Contacts").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate to Settings and capture in Dark Mode
+        composeTestRule.onNodeWithText("Settings").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
 
         scenario.close()
 

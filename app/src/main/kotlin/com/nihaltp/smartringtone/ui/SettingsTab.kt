@@ -60,6 +60,8 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
         )
     }
 
+    val currentTheme by viewModel.theme.collectAsState()
+
     Column(
         modifier =
             Modifier
@@ -68,6 +70,43 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // Theme Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_theme),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ThemeOptionRow(
+                    text = stringResource(R.string.theme_light),
+                    selected = currentTheme == "light",
+                    onClick = { viewModel.setTheme("light") },
+                )
+                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 4.dp))
+                ThemeOptionRow(
+                    text = stringResource(R.string.theme_dark),
+                    selected = currentTheme == "dark",
+                    onClick = { viewModel.setTheme("dark") },
+                )
+                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 4.dp))
+                ThemeOptionRow(
+                    text = stringResource(R.string.theme_system),
+                    selected = currentTheme == "system",
+                    onClick = { viewModel.setTheme("system") },
+                )
+            }
+        }
+
         // GitHub Links Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -128,7 +167,10 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setLoggingEnabled(!isLoggingEnabled) },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -572,5 +614,38 @@ fun getAppVersionCode(context: Context): Long {
         }
     } catch (e: Exception) {
         0L
+    }
+}
+
+@Composable
+fun ThemeOptionRow(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onClick() }
+                .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+        )
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+            colors =
+                RadioButtonDefaults.colors(
+                    selectedColor = AccentColor,
+                    unselectedColor = TextSecondary,
+                ),
+        )
     }
 }

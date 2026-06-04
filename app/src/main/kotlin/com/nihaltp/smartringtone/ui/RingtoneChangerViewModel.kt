@@ -40,15 +40,25 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _logsText = MutableStateFlow("")
     val logsText: StateFlow<String> = _logsText
 
+    private val _theme = MutableStateFlow("system")
+    val theme: StateFlow<String> = _theme
+
     private var mediaPlayer: MediaPlayer? = null
 
     init {
         _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
+        _theme.value = PreferenceHelper.getTheme(context)
         loadData()
     }
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun setTheme(themeValue: String) {
+        PreferenceHelper.setTheme(context, themeValue)
+        _theme.value = themeValue
+        AppLogger.log(context, "ViewModel", "Theme changed to: $themeValue")
     }
 
     fun setLoggingEnabled(enabled: Boolean) {

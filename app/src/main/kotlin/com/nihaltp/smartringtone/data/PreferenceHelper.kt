@@ -160,6 +160,7 @@ object PreferenceHelper {
     }
 
     private const val KEY_SCREENSHOT_MODE = "screenshot_mode"
+    private const val KEY_THEME = "app_theme"
 
     fun clearCallLogsHistory(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -177,5 +178,18 @@ object PreferenceHelper {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_SCREENSHOT_MODE, enabled).apply()
+    }
+
+    fun getTheme(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_THEME, "system") ?: "system"
+    }
+
+    fun setTheme(
+        context: Context,
+        theme: String,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_THEME, theme).apply()
     }
 }
