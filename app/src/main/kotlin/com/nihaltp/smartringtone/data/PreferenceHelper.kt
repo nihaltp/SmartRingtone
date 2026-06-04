@@ -118,13 +118,7 @@ object PreferenceHelper {
 
     fun getLastSyncTime(context: Context): Long {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val defaultVal = System.currentTimeMillis()
-        val saved = prefs.getLong(KEY_LAST_SYNC_TIME, 0L)
-        if (saved == 0L) {
-            prefs.edit().putLong(KEY_LAST_SYNC_TIME, defaultVal).apply()
-            return defaultVal
-        }
-        return saved
+        return prefs.getLong(KEY_LAST_SYNC_TIME, 0L)
     }
 
     fun setLastSyncTime(
@@ -155,6 +149,23 @@ object PreferenceHelper {
         val history = getCallLogsHistory(context).toMutableList()
         history.add(0, entry)
         if (history.size > 50) {
+            history.removeAt(history.size - 1)
+        }
+        val json = gson.toJson(history)
+        prefs.edit().putString(KEY_CALL_LOGS, json).apply()
+    }
+
+    fun addCallLogEntries(
+        context: Context,
+        entries: List<CallLogEntry>,
+    ) {
+        if (entries.isEmpty()) return
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val history = getCallLogsHistory(context).toMutableList()
+        for (entry in entries) {
+            history.add(0, entry)
+        }
+        while (history.size > 50) {
             history.removeAt(history.size - 1)
         }
         val json = gson.toJson(history)
