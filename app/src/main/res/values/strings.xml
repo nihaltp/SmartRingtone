@@ -83,6 +83,9 @@
     <string name="error_copy">Copy Error Details</string>
     <string name="error_dismiss">Dismiss</string>
     <string name="close">Close</string>
+    <string name="delete_ringtone_confirm_title">Remove Ringtone</string>
+    <string name="delete_ringtone_confirm_message">Are you sure you want to remove \"%1$s\" from your ringtone sequence?</string>
+    <string name="delete_btn">Remove</string>
 
     <!-- Logger Viewer -->
     <string name="logs_viewer_title">System Diagnostic Logs</string>

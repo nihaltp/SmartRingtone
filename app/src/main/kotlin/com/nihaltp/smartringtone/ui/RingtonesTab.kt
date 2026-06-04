@@ -10,7 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +33,53 @@ fun RingtonesTab(
     onMove: (Int, Boolean) -> Unit,
     onTogglePlay: (String) -> Unit,
 ) {
+    var ringtoneToDelete by remember { mutableStateOf<Ringtone?>(null) }
+
+    if (ringtoneToDelete != null) {
+        val ringtone = ringtoneToDelete!!
+        AlertDialog(
+            onDismissRequest = { ringtoneToDelete = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.delete_ringtone_confirm_title),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.delete_ringtone_confirm_message, ringtone.name),
+                    fontSize = 14.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete(ringtone.id)
+                        ringtoneToDelete = null
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete_btn),
+                        color = Color.Red,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { ringtoneToDelete = null }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
     Column(
         modifier =
             Modifier
@@ -94,7 +141,7 @@ fun RingtonesTab(
                         isPlaying = playingUri == ringtone.uri,
                         isFirst = index == 0,
                         isLast = index == ringtones.size - 1,
-                        onDelete = { onDelete(ringtone.id) },
+                        onDelete = { ringtoneToDelete = ringtone },
                         onMove = { up -> onMove(index, up) },
                         onTogglePlay = { onTogglePlay(ringtone.uri) },
                     )
