@@ -107,49 +107,6 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
             }
         }
 
-        // GitHub Links Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(6.dp),
-            colors = CardDefaults.cardColors(containerColor = CardBackground),
-            border = BorderStroke(1.dp, BorderColor),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = stringResource(R.string.settings_links),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentColor,
-                    fontFamily = FontFamily.Monospace,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // GitHub Repo
-                SettingsLinkRow(
-                    icon = Icons.Default.Code,
-                    title = stringResource(R.string.github_repo_title),
-                    subtitle = "https://github.com/nihaltp/SmartRingtone",
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nihaltp/SmartRingtone"))
-                        context.startActivity(intent)
-                    },
-                )
-
-                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 8.dp))
-
-                // GitHub Issues
-                SettingsLinkRow(
-                    icon = Icons.Default.BugReport,
-                    title = stringResource(R.string.github_issues_title),
-                    subtitle = stringResource(R.string.github_issues_desc),
-                    onClick = {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nihaltp/SmartRingtone/issues"))
-                        context.startActivity(intent)
-                    },
-                )
-            }
-        }
-
         // Logging Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -276,6 +233,49 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                     contentDescription = null,
                     tint = TextSecondary,
                     modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
+        // GitHub Links Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_links),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // GitHub Repo
+                SettingsLinkRow(
+                    icon = Icons.Default.Code,
+                    title = stringResource(R.string.github_repo_title),
+                    subtitle = "https://github.com/nihaltp/SmartRingtone",
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nihaltp/SmartRingtone"))
+                        context.startActivity(intent)
+                    },
+                )
+
+                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 8.dp))
+
+                // GitHub Issues
+                SettingsLinkRow(
+                    icon = Icons.Default.BugReport,
+                    title = stringResource(R.string.github_issues_title),
+                    subtitle = stringResource(R.string.github_issues_desc),
+                    onClick = {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/nihaltp/SmartRingtone/issues"))
+                        context.startActivity(intent)
+                    },
                 )
             }
         }
