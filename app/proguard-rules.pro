@@ -2,7 +2,8 @@
 -keepattributes Signature, *Annotation*, InnerClasses, EnclosingMethod
 
 # Keep the TypeToken class and all its subclasses to prevent type erasure on Gson TypeToken anonymous classes
--keep class * extends com.google.gson.reflect.TypeToken
+-keep class com.google.gson.reflect.TypeToken { *; }
+-keep class * extends com.google.gson.reflect.TypeToken { *; }
 
 # Keep the model classes that are serialized/deserialized with Gson
 -keep class com.nihaltp.smartringtone.data.Ringtone { *; }
