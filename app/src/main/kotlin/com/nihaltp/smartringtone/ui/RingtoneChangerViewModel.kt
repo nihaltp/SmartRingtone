@@ -47,6 +47,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     val theme: StateFlow<String> = _theme
 
     private var mediaPlayer: MediaPlayer? = null
+    private var currentRingtone: android.media.Ringtone? = null
 
     init {
         _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
@@ -387,7 +388,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             AppLogger.log(context, "ViewModel", "playPreview() started: uri=$uriString")
             try {
-                mediaPlayer?.release()
+                stopPreview()
                 mediaPlayer =
                     MediaPlayer().apply {
                         setDataSource(context, Uri.parse(uriString))
@@ -399,9 +400,29 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     }
                 _playingUri.value = uriString
             } catch (e: Exception) {
-                AppLogger.log(context, "ViewModel", "playPreview() failed", e)
-                _error.value = e
-                stopPreview()
+                AppLogger.log(context, "ViewModel", "playPreview() via MediaPlayer failed, trying RingtoneManager fallback", e)
+                try {
+                    val ringtone = android.media.RingtoneManager.getRingtone(context, Uri.parse(uriString))
+                    if (ringtone != null) {
+                        ringtone.play()
+                        currentRingtone = ringtone
+                        _playingUri.value = uriString
+                        viewModelScope.launch {
+                            while (ringtone.isPlaying && _playingUri.value == uriString) {
+                                kotlinx.coroutines.delay(500)
+                            }
+                            if (_playingUri.value == uriString) {
+                                stopPreview()
+                            }
+                        }
+                    } else {
+                        throw Exception("RingtoneManager returned null")
+                    }
+                } catch (fallbackEx: Exception) {
+                    AppLogger.log(context, "ViewModel", "playPreview() fallback failed", fallbackEx)
+                    _error.value = e // Report the original MediaPlayer error
+                    stopPreview()
+                }
             }
         }
     }
@@ -414,6 +435,13 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
             AppLogger.log(context, "ViewModel", "stopPreview() error (ignored)", e)
         } finally {
             mediaPlayer = null
+        }
+        try {
+            currentRingtone?.stop()
+        } catch (e: Exception) {
+            AppLogger.log(context, "ViewModel", "stopPreview() ringtone error (ignored)", e)
+        } finally {
+            currentRingtone = null
             _playingUri.value = null
         }
     }
@@ -421,6 +449,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     override fun onCleared() {
         super.onCleared()
         mediaPlayer?.release()
-        AppLogger.log(context, "ViewModel", "onCleared() - MediaPlayer released")
+        currentRingtone?.stop()
+        AppLogger.log(context, "ViewModel", "onCleared() - MediaPlayer and Ringtone released")
     }
 }
