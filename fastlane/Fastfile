@@ -151,25 +151,51 @@ platform :android do
       commits_raw = `git log #{last_tag}..HEAD --oneline`.strip rescue ""
     end
 
-    changelog_lines = []
+    commits = []
     unless commits_raw.empty?
       commits_raw.split("\n").each do |line|
         parts = line.split(" ", 2)
         sha = parts[0]
         msg = parts[1] || ""
-        # Format as "- sha  msg" to match metadata changelog style, e.g. "- 5b3993d  feat: ..."
-        changelog_lines << "- #{sha}  #{msg}"
+        commits << { sha: sha, msg: msg }
       end
     end
 
-    changelog_content = changelog_lines.join("\n")
+    types_order = ["fix", "feat", "style", "refactor", "docs", "perf", "test", "build", "ci", "chore", "revert"]
+
+    type_to_section = {
+      "fix" => "### Fixed",
+      "feat" => "### Added",
+      "style" => "### Style",
+      "refactor" => "### Refactor",
+      "docs" => "### Documentation",
+      "perf" => "### Performance",
+      "test" => "### Tests",
+      "build" => "### Build System",
+      "ci" => "### CI/CD",
+      "chore" => "### Maintenance",
+      "revert" => "### Reverted"
+    }
+
+    # Sort commits stably
+    sorted_commits = commits.sort_by.with_index do |commit, idx|
+      type = nil
+      if match = commit[:msg].match(/^([a-zA-Z0-9_-]+)(?:\([^)]+\))?(!?):/)
+        type = match[1]
+      end
+      type_idx = types_order.index(type) || types_order.length
+      [type_idx, idx]
+    end
+
+    # Flat list for version-code changelog file
+    flat_changelog = sorted_commits.map { |c| "- #{c[:sha]}  #{c[:msg]}" }.join("\n")
 
     current_date = Time.now.strftime("%Y-%m-%d")
 
     # 3. Format full metadata changelog text
     metadata_changelog = "Smart Ringtone v#{version_name} (#{current_date})\n\n"
     metadata_changelog += "Commits included in this release:\n"
-    metadata_changelog += changelog_content
+    metadata_changelog += flat_changelog
     metadata_changelog += "\n"
 
     # 4. Save metadata changelog to versionCode.txt (e.g. 3.txt)
@@ -185,14 +211,31 @@ platform :android do
     changelog_md_path = File.join(project_root, "CHANGELOG.md")
     if File.exist?(changelog_md_path)
       content = File.read(changelog_md_path)
-      # Format new entry matching the existing style:
-      # ## [version_name] - YYYY-MM-DD
-      #
-      # Commits included in this release:
-      # - sha  msg
+
+      # Group commits under section headers
+      groups = Hash.new { |h, k| h[k] = [] }
+      sorted_commits.each do |c|
+        type = nil
+        if match = c[:msg].match(/^([a-zA-Z0-9_-]+)(?:\([^)]+\))?(!?):/)
+          type = match[1]
+        end
+        section = type_to_section[type] || "### Other"
+        groups[section] << c
+      end
+
+      grouped_sections = []
+      ordered_sections = types_order.map { |t| type_to_section[t] } + ["### Other"]
+      ordered_sections.uniq.each do |sec|
+        next if groups[sec].empty?
+        sec_content = "#{sec}\n"
+        sec_content += groups[sec].map { |c| "- #{c[:sha]}  #{c[:msg]}" }.join("\n")
+        grouped_sections << sec_content
+      end
+
+      changelog_md_content = grouped_sections.join("\n\n")
+
       new_entry = "## [#{version_name}] - #{current_date}\n\n"
-      new_entry += "Commits included in this release:\n"
-      new_entry += changelog_content
+      new_entry += changelog_md_content
       new_entry += "\n\n"
 
       if content.include?("---")
