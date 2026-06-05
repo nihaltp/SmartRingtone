@@ -1,6 +1,5 @@
 package com.nihaltp.smartringtone.ui
 
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
@@ -29,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.nihaltp.smartringtone.R
+import com.nihaltp.smartringtone.data.GitHubIssueHelper
 
 @Composable
 fun SettingsTab(viewModel: RingtoneChangerViewModel) {
@@ -41,8 +41,8 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showLogsViewer by remember { mutableStateOf(false) }
 
-    val versionName = remember { getAppVersionName(context) }
-    val versionCode = remember { getAppVersionCode(context) }
+    val versionName = remember { GitHubIssueHelper.getAppVersionName(context) }
+    val versionCode = remember { GitHubIssueHelper.getAppVersionCode(context) }
 
     if (showLicensesDialog) {
         LicensesDialog(onDismiss = { showLicensesDialog = false })
@@ -601,29 +601,6 @@ fun LogViewerDialog(
         titleContentColor = TextPrimary,
         textContentColor = TextSecondary,
     )
-}
-
-fun getAppVersionName(context: Context): String {
-    return try {
-        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        packageInfo.versionName ?: "Unknown"
-    } catch (e: Exception) {
-        "Unknown"
-    }
-}
-
-fun getAppVersionCode(context: Context): Long {
-    return try {
-        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.versionCode.toLong()
-        }
-    } catch (e: Exception) {
-        0L
-    }
 }
 
 @Composable

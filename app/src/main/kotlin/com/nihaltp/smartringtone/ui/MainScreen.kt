@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import com.nihaltp.smartringtone.R
 import com.nihaltp.smartringtone.data.AppLogger
+import com.nihaltp.smartringtone.data.GitHubIssueHelper
 
 data class AppColors(
     val background: Color,
@@ -145,8 +146,8 @@ fun MainScreen(
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
-    val versionName = remember { getAppVersionName(context) }
-    val versionCode = remember { getAppVersionCode(context) }
+    val versionName = remember { GitHubIssueHelper.getAppVersionName(context) }
+    val versionCode = remember { GitHubIssueHelper.getAppVersionCode(context) }
 
     var selectedTab by remember { mutableStateOf(AppTab.RINGTONES) }
     var searchQuery by remember { mutableStateOf("") }
@@ -346,28 +347,7 @@ fun MainScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val title = "Crash/Error: ${err.message?.take(50) ?: "Unknown Error"}"
-                        val body =
-                            """
-                            **Error Description:**
-                            ${err.localizedMessage ?: err.message ?: "No error message provided."}
-
-                            **Stack Trace:**
-                            ```
-                            $stackTrace
-                            ```
-
-                            **Device & App Details:**
-                            - Device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}
-                            - Android Version: ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT})
-                            - App Version: $versionName ($versionCode)
-                            """.trimIndent()
-
-                        val reportUrl =
-                            "https://github.com/nihaltp/SmartRingtone/issues/new" +
-                                "?title=${Uri.encode(title)}" +
-                                "&body=${Uri.encode(body)}"
-
+                        val reportUrl = GitHubIssueHelper.getReportUrl(context, err)
                         try {
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(reportUrl))
                             context.startActivity(intent)
