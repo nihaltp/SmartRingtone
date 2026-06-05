@@ -1,0 +1,6 @@
+Smart Ringtone v1.1.1 (2026-06-05)
+
+Commits included in this release:
+- b7e07c2  feat: scan whole call log on first time install
+- 0226213  feat: add confirmation for removing ringtones
+- 15f3671  feat: add close buton to log view
