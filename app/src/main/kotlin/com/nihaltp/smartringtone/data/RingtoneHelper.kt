@@ -60,10 +60,20 @@ object RingtoneHelper {
                     if (idCol >= 0) {
                         val mediaId = cursor.getLong(idCol)
                         val existingUri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, mediaId.toString())
-                        Log.d("RingtoneHelper", "Found existing ringtone URI: $existingUri")
-                        val ringtones = PreferenceHelper.getRingtones(context)
-                        val nextId = (ringtones.maxOfOrNull { it.id } ?: 0) + 1
-                        return Ringtone(id = nextId, name = fileName, uri = existingUri.toString())
+                        var isReadable = false
+                        try {
+                            context.contentResolver.openInputStream(existingUri)?.use {
+                                isReadable = true
+                            }
+                        } catch (e: Exception) {
+                            Log.w("RingtoneHelper", "Existing ringtone URI found but not readable: $existingUri", e)
+                        }
+                        if (isReadable) {
+                            Log.d("RingtoneHelper", "Found existing readable ringtone URI: $existingUri")
+                            val ringtones = PreferenceHelper.getRingtones(context)
+                            val nextId = (ringtones.maxOfOrNull { it.id } ?: 0) + 1
+                            return Ringtone(id = nextId, name = fileName, uri = existingUri.toString())
+                        }
                     }
                 }
             }

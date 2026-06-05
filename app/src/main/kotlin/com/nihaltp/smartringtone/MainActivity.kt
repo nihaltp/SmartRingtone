@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
             )
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             list.add(Manifest.permission.POST_NOTIFICATIONS)
+            list.add(Manifest.permission.READ_MEDIA_AUDIO)
+        } else {
+            list.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
         list.toTypedArray()
     }
