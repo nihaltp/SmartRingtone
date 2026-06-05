@@ -99,4 +99,11 @@
     <string name="theme_light">Light Theme</string>
     <string name="theme_dark">Dark Theme</string>
     <string name="theme_system">System Default</string>
+
+    <!-- Fallback Ringtone Settings -->
+    <string name="settings_fallback_ringtone">Fallback Default Ringtone</string>
+    <string name="settings_fallback_ringtone_desc">This ringtone will be used when restoring a contact\'s ringtone if their original ringtone is missing, unreadable, or was originally set to default.</string>
+    <string name="select_fallback_ringtone_btn">Select Ringtone</string>
+    <string name="clear_fallback_ringtone_btn">Clear Fallback</string>
+    <string name="fallback_ringtone_not_set">Not Selected (Uses System Default)</string>
 </resources>

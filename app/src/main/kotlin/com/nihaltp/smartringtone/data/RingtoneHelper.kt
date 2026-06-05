@@ -10,10 +10,10 @@ import java.io.InputStream
 import java.io.OutputStream
 
 object RingtoneHelper {
-    fun addRingtoneFromUri(
+    fun persistRingtone(
         context: Context,
         sourceUri: Uri,
-    ): Ringtone? {
+    ): Pair<String, String>? {
         val contentResolver = context.contentResolver
         var fileName = "CustomRingtone.mp3"
         var mimeType = "audio/mp3"
@@ -70,9 +70,7 @@ object RingtoneHelper {
                         }
                         if (isReadable) {
                             Log.d("RingtoneHelper", "Found existing readable ringtone URI: $existingUri")
-                            val ringtones = PreferenceHelper.getRingtones(context)
-                            val nextId = (ringtones.maxOfOrNull { it.id } ?: 0) + 1
-                            return Ringtone(id = nextId, name = fileName, uri = existingUri.toString())
+                            return Pair(fileName, existingUri.toString())
                         }
                     }
                 }
@@ -115,12 +113,20 @@ object RingtoneHelper {
                 outputStream?.close()
             }
 
-            val ringtones = PreferenceHelper.getRingtones(context)
-            val nextId = (ringtones.maxOfOrNull { it.id } ?: 0) + 1
-            Ringtone(id = nextId, name = fileName, uri = newUri.toString())
+            Pair(fileName, newUri.toString())
         } catch (e: Exception) {
             Log.e("RingtoneHelper", "Failed to add ringtone to MediaStore", e)
             null
         }
+    }
+
+    fun addRingtoneFromUri(
+        context: Context,
+        sourceUri: Uri,
+    ): Ringtone? {
+        val persisted = persistRingtone(context, sourceUri) ?: return null
+        val ringtones = PreferenceHelper.getRingtones(context)
+        val nextId = (ringtones.maxOfOrNull { it.id } ?: 0) + 1
+        return Ringtone(id = nextId, name = persisted.first, uri = persisted.second)
     }
 }

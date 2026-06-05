@@ -46,12 +46,20 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _theme = MutableStateFlow("system")
     val theme: StateFlow<String> = _theme
 
+    private val _fallbackRingtoneUri = MutableStateFlow<String?>(null)
+    val fallbackRingtoneUri: StateFlow<String?> = _fallbackRingtoneUri
+
+    private val _fallbackRingtoneName = MutableStateFlow<String?>(null)
+    val fallbackRingtoneName: StateFlow<String?> = _fallbackRingtoneName
+
     private var mediaPlayer: MediaPlayer? = null
     private var currentRingtone: android.media.Ringtone? = null
 
     init {
         _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
         _theme.value = PreferenceHelper.getTheme(context)
+        _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
+        _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
         loadData()
     }
 
@@ -369,6 +377,54 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 AppLogger.log(context, "ViewModel", "clearHistory() completed")
             } catch (e: Exception) {
                 AppLogger.log(context, "ViewModel", "clearHistory() failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun setFallbackRingtone(uri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val persisted =
+                    withContext(Dispatchers.IO) {
+                        RingtoneHelper.persistRingtone(context, uri)
+                    }
+                if (persisted != null) {
+                    val (name, uriString) = persisted
+                    withContext(Dispatchers.IO) {
+                        PreferenceHelper.setFallbackRingtone(context, uriString, name)
+                    }
+                    _fallbackRingtoneUri.value = uriString
+                    _fallbackRingtoneName.value = name
+                    AppLogger.log(context, "ViewModel", "Fallback default ringtone set to: $name")
+                } else {
+                    AppLogger.log(context, "ViewModel", "Failed to persist fallback ringtone from URI")
+                    _error.value = Exception("Failed to resolve fallback audio file from URI: $uri")
+                }
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "setFallbackRingtone failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearFallbackRingtone() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                withContext(Dispatchers.IO) {
+                    PreferenceHelper.setFallbackRingtone(context, null, null)
+                }
+                _fallbackRingtoneUri.value = null
+                _fallbackRingtoneName.value = null
+                AppLogger.log(context, "ViewModel", "Fallback default ringtone cleared")
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "clearFallbackRingtone failed", e)
                 _error.value = e
             } finally {
                 _isLoading.value = false

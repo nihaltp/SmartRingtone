@@ -240,6 +240,20 @@ object ContactHelper {
         }
     }
 
+    fun isUriReadable(
+        context: Context,
+        uriString: String?,
+    ): Boolean {
+        if (uriString.isNullOrEmpty()) return false
+        return try {
+            val uri = Uri.parse(uriString)
+            context.contentResolver.openInputStream(uri)?.use { }
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun updateContactRingtoneBasedOnScore(
         context: Context,
         contactId: String,
@@ -252,14 +266,28 @@ object ContactHelper {
         if (newScore == 0) {
             // Restore original ringtone
             val original = PreferenceHelper.getOriginalRingtone(context, contactId)
+            val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
+
+            val uriToSet: String?
             if (original != null) {
-                val uriToSet = if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) null else original
-                setContactRingtone(context, contactId, uriToSet)
-                PreferenceHelper.setOriginalRingtone(context, contactId, null) // clear original backup
+                if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
+                    uriToSet = fallbackUri
+                } else {
+                    if (isUriReadable(context, original)) {
+                        uriToSet = original
+                    } else {
+                        uriToSet = fallbackUri
+                    }
+                }
             } else {
-                // If there's no backup, we just set to null (default)
-                setContactRingtone(context, contactId, null)
+                uriToSet = fallbackUri
             }
+
+            val success = setContactRingtone(context, contactId, uriToSet)
+            if (!success && uriToSet != fallbackUri && fallbackUri != null) {
+                setContactRingtone(context, contactId, fallbackUri)
+            }
+            PreferenceHelper.setOriginalRingtone(context, contactId, null) // clear original backup
         } else {
             // Check if we need to backup the original ringtone first (only if no backup exists yet)
             val currentBackup = PreferenceHelper.getOriginalRingtone(context, contactId)
@@ -369,16 +397,27 @@ object ContactHelper {
 
         if (scoredContacts.isEmpty()) return
 
+        val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
+
         for (c in scoredContacts) {
             editor.remove("score_${c.id}")
             val origKey = "orig_rt_${c.id}"
             val original = prefs.getString(origKey, null)
             if (original != null) {
-                val uriToSet = if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) null else original
+                val uriToSet: String?
+                if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
+                    uriToSet = fallbackUri
+                } else {
+                    if (isUriReadable(context, original)) {
+                        uriToSet = original
+                    } else {
+                        uriToSet = fallbackUri
+                    }
+                }
                 updates.add(c.id to uriToSet)
                 editor.remove(origKey)
             } else {
-                updates.add(c.id to null)
+                updates.add(c.id to fallbackUri)
             }
         }
         editor.apply()

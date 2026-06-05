@@ -11,6 +11,8 @@ object PreferenceHelper {
     private const val KEY_ORIGINAL_RINGTONE_PREFIX = "orig_rt_"
     private const val KEY_LAST_SYNC_TIME = "last_sync_time"
     private const val KEY_CALL_LOGS = "call_logs_history"
+    private const val KEY_FALLBACK_RINGTONE_URI = "fallback_ringtone_uri"
+    private const val KEY_FALLBACK_RINGTONE_NAME = "fallback_ringtone_name"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -204,5 +206,34 @@ object PreferenceHelper {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putString(KEY_THEME, theme).apply()
+    }
+
+    fun getFallbackRingtoneUri(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_FALLBACK_RINGTONE_URI, null)
+    }
+
+    fun getFallbackRingtoneName(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_FALLBACK_RINGTONE_NAME, null)
+    }
+
+    fun setFallbackRingtone(
+        context: Context,
+        uriString: String?,
+        nameString: String?,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (uriString != null) {
+            prefs.edit()
+                .putString(KEY_FALLBACK_RINGTONE_URI, uriString)
+                .putString(KEY_FALLBACK_RINGTONE_NAME, nameString)
+                .apply()
+        } else {
+            prefs.edit()
+                .remove(KEY_FALLBACK_RINGTONE_URI)
+                .remove(KEY_FALLBACK_RINGTONE_NAME)
+                .apply()
+        }
     }
 }
