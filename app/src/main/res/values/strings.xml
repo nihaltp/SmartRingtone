@@ -65,6 +65,7 @@
     <string name="view_logs">View Logs</string>
     <string name="clear_logs_btn">Clear Log File</string>
     <string name="version_title">Version</string>
+    <string name="version_code">Version Code</string>
     <string name="github_repo_title">GitHub Repository</string>
     <string name="github_issues_title">Report an Issue</string>
     <string name="github_issues_desc">Submit bugs or suggestions to our tracker</string>

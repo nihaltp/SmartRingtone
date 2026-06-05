@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -280,17 +281,14 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
             }
         }
 
-        // App Info Card (moved to bottom, layout on separate lines)
+        // App Info Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(6.dp),
             colors = CardDefaults.cardColors(containerColor = CardBackground),
             border = BorderStroke(1.dp, BorderColor),
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = stringResource(R.string.settings_app_info),
                     fontSize = 14.sp,
@@ -298,34 +296,66 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                     color = AccentColor,
                     fontFamily = FontFamily.Monospace,
                 )
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Column {
-                    Text(
-                        text = stringResource(R.string.app_name),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary,
-                    )
-                    Text(
-                        text = stringResource(R.string.app_subtitle),
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Version Name box
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .background(BackgroundColor, shape = RoundedCornerShape(4.dp))
+                                .border(BorderStroke(1.dp, BorderColor), RoundedCornerShape(4.dp))
+                                .padding(12.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.version_title).uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = versionName,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                            )
+                        }
+                    }
+
+                    // Version Code box
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .background(BackgroundColor, shape = RoundedCornerShape(4.dp))
+                                .border(BorderStroke(1.dp, BorderColor), RoundedCornerShape(4.dp))
+                                .padding(12.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.version_code).uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = versionCode.toString(),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                            )
+                        }
+                    }
                 }
-
-                Text(
-                    text = "${stringResource(R.string.version_title)}: $versionName",
-                    fontSize = 13.sp,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.Medium,
-                )
-
-                Text(
-                    text = "Code: $versionCode",
-                    fontSize = 12.sp,
-                    color = TextSecondary,
-                    fontFamily = FontFamily.Monospace,
-                )
             }
         }
     }
