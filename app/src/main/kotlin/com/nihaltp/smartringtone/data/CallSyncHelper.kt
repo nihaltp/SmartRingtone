@@ -6,6 +6,14 @@ import android.util.Log
 import com.nihaltp.smartringtone.R
 
 object CallSyncHelper {
+    private val syncLock = Any()
+
+    fun <T> runSynchronized(block: () -> T): T {
+        return synchronized(syncLock) {
+            block()
+        }
+    }
+
     fun syncCallLogs(context: Context) {
         synchronized(syncLock) {
             if (PreferenceHelper.isScreenshotMode(context)) return

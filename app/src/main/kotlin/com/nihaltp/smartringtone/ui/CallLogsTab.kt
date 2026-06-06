@@ -10,9 +10,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -28,33 +32,215 @@ import java.util.*
 fun CallLogsTab(
     callLogs: List<CallLogEntry>,
     onClear: () -> Unit,
+    onRescan: () -> Unit,
+    checkSystemCallLogEmpty: () -> Boolean,
 ) {
+    var showRescanDisclaimer by remember { mutableStateOf(false) }
+    var showEmptyLogDisclaimer by remember { mutableStateOf(false) }
+    var showClearLogsDisclaimer by remember { mutableStateOf(false) }
+
+    if (showRescanDisclaimer) {
+        AlertDialog(
+            onDismissRequest = { showRescanDisclaimer = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.rescan_confirm_title),
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.rescan_confirm_message),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showRescanDisclaimer = false },
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onRescan()
+                        showRescanDisclaimer = false
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.rescan_confirm_btn),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    if (showEmptyLogDisclaimer) {
+        AlertDialog(
+            onDismissRequest = { showEmptyLogDisclaimer = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.rescan_empty_confirm_title),
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.rescan_empty_confirm_message),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showEmptyLogDisclaimer = false },
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onRescan()
+                        showEmptyLogDisclaimer = false
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.rescan_anyway_btn),
+                        color = Color.Red,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    if (showClearLogsDisclaimer) {
+        AlertDialog(
+            onDismissRequest = { showClearLogsDisclaimer = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.clear_logs_confirm_title),
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.clear_logs_confirm_message),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showClearLogsDisclaimer = false },
+                ) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        onClear()
+                        showClearLogsDisclaimer = false
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.clear_logs_confirm_btn),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
                 .padding(16.dp),
     ) {
+        Text(
+            text = stringResource(R.string.tracked_call_history),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = TextPrimary,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(R.string.tracked_call_history),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary,
-            )
-            if (callLogs.isNotEmpty()) {
-                TextButton(
-                    onClick = onClear,
-                    colors = ButtonDefaults.textButtonColors(contentColor = TextSecondary),
-                ) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.clear_logs), fontWeight = FontWeight.Bold)
-                }
+            // Rescan Button
+            Button(
+                onClick = {
+                    if (checkSystemCallLogEmpty()) {
+                        showEmptyLogDisclaimer = true
+                    } else {
+                        showRescanDisclaimer = true
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = TextSecondary.copy(alpha = 0.15f)),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Default.Refresh, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = stringResource(R.string.rescan_logs),
+                    color = TextSecondary,
+                    fontSize = 12.sp,
+                )
+            }
+
+            // Clear Logs Button
+            Button(
+                onClick = { showClearLogsDisclaimer = true },
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = TextSecondary.copy(alpha = 0.15f),
+                        disabledContainerColor = TextSecondary.copy(alpha = 0.05f),
+                    ),
+                enabled = callLogs.isNotEmpty(),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    Icons.Default.DeleteOutline,
+                    contentDescription = null,
+                    tint = if (callLogs.isNotEmpty()) TextSecondary else TextSecondary.copy(alpha = 0.5f),
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = stringResource(R.string.clear_logs),
+                    color = if (callLogs.isNotEmpty()) TextSecondary else TextSecondary.copy(alpha = 0.5f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
         Spacer(modifier = Modifier.height(16.dp))

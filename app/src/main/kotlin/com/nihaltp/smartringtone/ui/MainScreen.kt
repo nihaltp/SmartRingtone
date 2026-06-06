@@ -280,6 +280,8 @@ fun MainScreen(
                             CallLogsTab(
                                 callLogs = callLogs,
                                 onClear = { viewModel.clearHistory() },
+                                onRescan = { viewModel.rescanCallLogs() },
+                                checkSystemCallLogEmpty = { viewModel.checkSystemCallLogEmpty() },
                             )
                         AppTab.SETTINGS ->
                             SettingsTab(

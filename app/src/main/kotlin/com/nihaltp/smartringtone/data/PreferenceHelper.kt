@@ -184,6 +184,33 @@ object PreferenceHelper {
         prefs.edit().remove(KEY_CALL_LOGS).apply()
     }
 
+    fun saveCallLogsHistory(
+        context: Context,
+        history: List<CallLogEntry>,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val json = gson.toJson(history)
+        prefs.edit().putString(KEY_CALL_LOGS, json).apply()
+    }
+
+    fun clearCallLogsForContact(
+        context: Context,
+        contactId: String,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val history = getCallLogsHistory(context).toMutableList()
+        val contactName = ContactHelper.getContactName(context, contactId)
+        val updated =
+            history.filter { entry ->
+                val entryContactId = ContactHelper.getContactIdFromNumber(context, entry.number)
+                val matchesId = entryContactId == contactId
+                val matchesName = contactName.isNotEmpty() && entry.name == contactName
+                !matchesId && !matchesName
+            }
+        val json = gson.toJson(updated)
+        prefs.edit().putString(KEY_CALL_LOGS, json).apply()
+    }
+
     fun isScreenshotMode(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_SCREENSHOT_MODE, false)
