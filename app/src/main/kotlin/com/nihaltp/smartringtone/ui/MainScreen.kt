@@ -234,13 +234,15 @@ fun MainScreen(
             color = BackgroundColor,
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Header Panel
-                HeaderPanel(
-                    isLoading = isLoading,
-                    onSync = { viewModel.syncCallLogs() },
-                    hasPermissions = hasPermissions,
-                    onRequestPermissions = onRequestPermissions,
-                )
+                // Header Panel (only on Ringtones tab)
+                if (selectedTab == AppTab.RINGTONES) {
+                    HeaderPanel(
+                        isLoading = isLoading,
+                        onSync = { viewModel.syncCallLogs() },
+                        hasPermissions = hasPermissions,
+                        onRequestPermissions = onRequestPermissions,
+                    )
+                }
 
                 if (!hasPermissions) {
                     // Educational Permission Card
