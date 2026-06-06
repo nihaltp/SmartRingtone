@@ -208,6 +208,63 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
             }
         }
 
+        // Dynamic Color Card (Android 12+ only)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val useDynamicColor by viewModel.useDynamicColor.collectAsState()
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(6.dp),
+                colors = CardDefaults.cardColors(containerColor = CardBackground),
+                border = BorderStroke(1.dp, BorderColor),
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.enable_dynamic_color).uppercase(),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AccentColor,
+                        fontFamily = FontFamily.Monospace,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.setDynamicColorEnabled(!useDynamicColor) },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.enable_dynamic_color),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary,
+                            )
+                            Text(
+                                text = stringResource(R.string.enable_dynamic_color_desc),
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                lineHeight = 16.sp,
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Switch(
+                            checked = useDynamicColor,
+                            onCheckedChange = { viewModel.setDynamicColorEnabled(it) },
+                            colors =
+                                SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = AccentColor,
+                                    uncheckedThumbColor = TextSecondary,
+                                    uncheckedTrackColor = BorderColor,
+                                ),
+                        )
+                    }
+                }
+            }
+        }
+
         // Call Score Additions Card
         Card(
             modifier = Modifier.fillMaxWidth(),

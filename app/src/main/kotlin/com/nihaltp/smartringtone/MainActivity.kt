@@ -67,7 +67,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val themeMode by viewModel.theme.collectAsState()
-            SmartRingtoneTheme(themeMode = themeMode) {
+            val useDynamicColor by viewModel.useDynamicColor.collectAsState()
+            SmartRingtoneTheme(themeMode = themeMode, useDynamicColor = useDynamicColor) {
                 MainScreen(
                     viewModel = viewModel,
                     hasPermissions = hasPermissionsState.value,

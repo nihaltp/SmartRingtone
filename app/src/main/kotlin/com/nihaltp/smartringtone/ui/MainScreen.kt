@@ -99,6 +99,7 @@ val TextSecondary: Color
 @Composable
 fun SmartRingtoneTheme(
     themeMode: String,
+    useDynamicColor: Boolean,
     content: @Composable () -> Unit,
 ) {
     val darkTheme =
@@ -107,7 +108,27 @@ fun SmartRingtoneTheme(
             "dark" -> true
             else -> isSystemInDarkTheme()
         }
-    val colors = if (darkTheme) DarkColors else LightColors
+
+    val context = LocalContext.current
+    val colors =
+        if (useDynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val dynamicColorScheme =
+                if (darkTheme) {
+                    dynamicDarkColorScheme(context)
+                } else {
+                    dynamicLightColorScheme(context)
+                }
+            AppColors(
+                background = dynamicColorScheme.background,
+                cardBackground = dynamicColorScheme.surface,
+                borderColor = dynamicColorScheme.outlineVariant,
+                accentColor = dynamicColorScheme.primary,
+                textPrimary = dynamicColorScheme.onSurface,
+                textSecondary = dynamicColorScheme.onSurfaceVariant,
+            )
+        } else {
+            if (darkTheme) DarkColors else LightColors
+        }
 
     val view = LocalView.current
     if (!view.isInEditMode) {

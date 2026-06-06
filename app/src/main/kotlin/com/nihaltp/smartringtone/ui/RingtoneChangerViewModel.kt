@@ -51,6 +51,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _theme = MutableStateFlow("system")
     val theme: StateFlow<String> = _theme
 
+    private val _useDynamicColor = MutableStateFlow(true)
+    val useDynamicColor: StateFlow<Boolean> = _useDynamicColor
+
     private val _fallbackRingtoneUri = MutableStateFlow<String?>(null)
     val fallbackRingtoneUri: StateFlow<String?> = _fallbackRingtoneUri
 
@@ -82,6 +85,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
         _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
         _theme.value = PreferenceHelper.getTheme(context)
+        _useDynamicColor.value = PreferenceHelper.isDynamicColorEnabled(context)
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
         _isAppPaused.value = PreferenceHelper.isAppPaused(context)
@@ -117,6 +121,12 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         PreferenceHelper.setLogTabEnabled(context, enabled)
         _isLogTabEnabled.value = enabled
         AppLogger.log(context, "ViewModel", "Log tab enabled state changed to: $enabled")
+    }
+
+    fun setDynamicColorEnabled(enabled: Boolean) {
+        PreferenceHelper.setDynamicColorEnabled(context, enabled)
+        _useDynamicColor.value = enabled
+        AppLogger.log(context, "ViewModel", "Dynamic color state changed to: $enabled")
     }
 
     fun loadLogs() {
@@ -874,6 +884,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     _isAppPaused.value = PreferenceHelper.isAppPaused(context)
                     _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
                     _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
+                    _useDynamicColor.value = PreferenceHelper.isDynamicColorEnabled(context)
 
                     withContext(Dispatchers.IO) {
                         if (!PreferenceHelper.isAppPaused(context)) {

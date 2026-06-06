@@ -18,6 +18,7 @@ object PreferenceHelper {
     private const val KEY_SCORE_ADDITION_MISSED = "score_addition_missed"
     private const val KEY_SCORE_ADDITION_REJECTED = "score_addition_rejected"
     private const val KEY_LOG_TAB_ENABLED = "log_tab_enabled"
+    private const val KEY_DYNAMIC_COLOR_ENABLED = "dynamic_color_enabled"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -293,6 +294,20 @@ object PreferenceHelper {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_LOG_TAB_ENABLED, enabled).apply()
+    }
+
+    fun isDynamicColorEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val defaultVal = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+        return prefs.getBoolean(KEY_DYNAMIC_COLOR_ENABLED, defaultVal)
+    }
+
+    fun setDynamicColorEnabled(
+        context: Context,
+        enabled: Boolean,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_DYNAMIC_COLOR_ENABLED, enabled).apply()
     }
 
     fun getBackupFileUri(context: Context): String? {
