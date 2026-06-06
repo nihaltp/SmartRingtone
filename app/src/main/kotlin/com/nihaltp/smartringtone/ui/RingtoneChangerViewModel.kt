@@ -218,6 +218,51 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun addBlankRingtone() {
+        viewModelScope.launch {
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "addBlankRingtone() started")
+                _isLoading.value = true
+                try {
+                    val currentList =
+                        withContext(Dispatchers.IO) {
+                            val list = PreferenceHelper.getRingtones(context).toMutableList()
+                            val nextId = (list.maxOfOrNull { it.id } ?: 0) + 1
+                            val blankName = context.getString(com.nihaltp.smartringtone.R.string.blank_ringtone_name)
+                            val added = Ringtone(id = nextId, name = blankName, uri = "blank")
+                            list.add(added)
+                            PreferenceHelper.saveRingtones(context, list)
+                            list
+                        }
+                    _ringtones.value = currentList
+
+                    val unavailMap = currentList.associate { it.id to !ContactHelper.isUriReadable(context, it.uri) }
+                    _unavailableRingtones.value = unavailMap
+
+                    AppLogger.log(context, "ViewModel", "addBlankRingtone() completed")
+
+                    // Background update of contacts in system DB
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            val contactsList = ContactHelper.getContacts(context)
+                            ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                            val loadedContacts = ContactHelper.getContacts(context)
+                            _contacts.value = loadedContacts
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after blank addition")
+                        } catch (bgEx: Exception) {
+                            AppLogger.log(context, "ViewModel", "Background contacts ringtones sync failed", bgEx)
+                        }
+                    }
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "addBlankRingtone() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
+
     fun deleteRingtone(ringtoneId: Int) {
         viewModelScope.launch {
             stateMutex.withLock {
@@ -236,8 +281,8 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     val updatedContacts =
                         _contacts.value.map { contact ->
                             if (contact.score > 0) {
-                                val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
-                                val mappedName = if (currentList.isNotEmpty()) currentList[idx].name else "System Default"
+                                val resolved = ContactHelper.getResolvedRingtoneForScore(contact.score, currentList)
+                                val mappedName = resolved?.name ?: "System Default"
                                 contact.copy(mappedRingtoneName = mappedName)
                             } else {
                                 contact
@@ -294,8 +339,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     val updatedContacts =
                         _contacts.value.map { contact ->
                             if (contact.score > 0 && currentList.isNotEmpty()) {
-                                val idx = (contact.score - 1).coerceAtMost(currentList.size - 1)
-                                contact.copy(mappedRingtoneName = currentList[idx].name)
+                                val resolved = ContactHelper.getResolvedRingtoneForScore(contact.score, currentList)
+                                val mappedName = resolved?.name ?: "System Default"
+                                contact.copy(mappedRingtoneName = mappedName)
                             } else {
                                 contact
                             }
@@ -487,13 +533,33 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         if (_playingUri.value == uriString) {
             stopPreview()
         } else {
-            playPreview(uriString)
+            val actualUriToPlay =
+                if (uriString.startsWith("blank?id=")) {
+                    val ringtoneId = uriString.substringAfter("blank?id=").toIntOrNull()
+                    val ringtoneIndex = _ringtones.value.indexOfFirst { it.id == ringtoneId }
+                    if (ringtoneIndex != -1) {
+                        val resolved = ContactHelper.getResolvedRingtoneForScore(ringtoneIndex + 1, _ringtones.value)
+                        resolved?.uri
+                            ?: PreferenceHelper.getFallbackRingtoneUri(context)
+                            ?: android.provider.Settings.System.DEFAULT_RINGTONE_URI.toString()
+                    } else {
+                        null
+                    }
+                } else {
+                    uriString
+                }
+            if (actualUriToPlay != null) {
+                playPreview(actualUriToPlay, highlightUri = uriString)
+            }
         }
     }
 
-    private fun playPreview(uriString: String) {
+    private fun playPreview(
+        uriString: String,
+        highlightUri: String = uriString,
+    ) {
         viewModelScope.launch {
-            AppLogger.log(context, "ViewModel", "playPreview() started: uri=$uriString")
+            AppLogger.log(context, "ViewModel", "playPreview() started: uri=$uriString, highlightUri=$highlightUri")
             try {
                 stopPreview()
                 mediaPlayer =
@@ -505,7 +571,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                             stopPreview()
                         }
                     }
-                _playingUri.value = uriString
+                _playingUri.value = highlightUri
             } catch (e: Exception) {
                 AppLogger.log(context, "ViewModel", "playPreview() via MediaPlayer failed, trying RingtoneManager fallback", e)
                 try {
@@ -513,12 +579,12 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     if (ringtone != null) {
                         ringtone.play()
                         currentRingtone = ringtone
-                        _playingUri.value = uriString
+                        _playingUri.value = highlightUri
                         viewModelScope.launch {
-                            while (ringtone.isPlaying && _playingUri.value == uriString) {
+                            while (ringtone.isPlaying && _playingUri.value == highlightUri) {
                                 kotlinx.coroutines.delay(500)
                             }
-                            if (_playingUri.value == uriString) {
+                            if (_playingUri.value == highlightUri) {
                                 stopPreview()
                             }
                         }

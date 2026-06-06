@@ -13,6 +13,10 @@
 
     <string name="ringtone_sequence">Ringtone Sequence</string>
     <string name="add">Add</string>
+    <string name="add_options_title">Add Option</string>
+    <string name="add_ringtone">Add Ringtone</string>
+    <string name="add_blank_ringtone">Add Blank Ringtone</string>
+    <string name="blank_ringtone_name">Blank Ringtone</string>
     <string name="no_ringtones">No ringtones added. Tap Add to select audio files from your device.</string>
     <string name="plays_on_score">Plays on Call Score = %1$d</string>
 

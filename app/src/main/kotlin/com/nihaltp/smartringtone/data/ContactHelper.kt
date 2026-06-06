@@ -10,18 +10,29 @@ import android.util.Log
 import com.nihaltp.smartringtone.NotificationHelper
 
 object ContactHelper {
+    fun getResolvedRingtoneForScore(
+        score: Int,
+        ringtones: List<Ringtone>,
+    ): Ringtone? {
+        if (score <= 0 || ringtones.isEmpty()) return null
+        val maxIndex = (score - 1).coerceAtMost(ringtones.size - 1)
+        for (i in maxIndex downTo 0) {
+            val ringtone = ringtones[i]
+            if (ringtone.uri != "blank") {
+                return ringtone
+            }
+        }
+        return null
+    }
+
     fun getContacts(context: Context): List<Contact> {
         if (PreferenceHelper.isScreenshotMode(context)) {
             val ringtones = PreferenceHelper.getRingtones(context)
             val allScores = PreferenceHelper.getAllScores(context)
 
             fun getMappedName(score: Int): String {
-                return if (score > 0 && ringtones.isNotEmpty()) {
-                    val index = (score - 1).coerceAtMost(ringtones.size - 1)
-                    ringtones[index].name
-                } else {
-                    "System Default"
-                }
+                val resolved = getResolvedRingtoneForScore(score, ringtones)
+                return resolved?.name ?: "System Default"
             }
             return listOf(
                 Contact(
@@ -97,10 +108,10 @@ object ContactHelper {
                     val customRingtone = if (ringtoneCol >= 0) it.getString(ringtoneCol) else null
                     val score = allScores[contactId] ?: 0
 
+                    val resolvedRingtone = getResolvedRingtoneForScore(score, ringtones)
                     val mappedRingtoneName =
-                        if (score > 0 && ringtones.isNotEmpty()) {
-                            val index = (score - 1).coerceAtMost(ringtones.size - 1)
-                            ringtones[index].name
+                        if (resolvedRingtone != null) {
+                            resolvedRingtone.name
                         } else {
                             val original = allOriginals[contactId]
                             if (!original.isNullOrEmpty() && original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
@@ -245,6 +256,7 @@ object ContactHelper {
         uriString: String?,
     ): Boolean {
         if (uriString.isNullOrEmpty()) return false
+        if (uriString == "blank") return true
         return try {
             val uri = Uri.parse(uriString)
             context.contentResolver.openInputStream(uri)?.use { }
@@ -299,10 +311,22 @@ object ContactHelper {
             }
 
             // Set the custom ringtone based on score
-            if (activeRingtones.isNotEmpty()) {
-                val index = (newScore - 1).coerceAtMost(activeRingtones.size - 1)
-                val ringtoneUri = activeRingtones[index].uri
-                setContactRingtone(context, contactId, ringtoneUri)
+            val resolvedRingtone = getResolvedRingtoneForScore(newScore, activeRingtones)
+            if (resolvedRingtone != null) {
+                setContactRingtone(context, contactId, resolvedRingtone.uri)
+            } else {
+                // Resolved to blank / default!
+                val original = PreferenceHelper.getOriginalRingtone(context, contactId)
+                val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
+                val isBackupValid =
+                    original != null &&
+                        original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER &&
+                        isUriReadable(context, original)
+                val uriToSet: String? = if (isBackupValid) original else fallbackUri
+                val success = setContactRingtone(context, contactId, uriToSet)
+                if (!success && uriToSet != fallbackUri && fallbackUri != null) {
+                    setContactRingtone(context, contactId, fallbackUri)
+                }
             }
         }
     }
@@ -346,20 +370,31 @@ object ContactHelper {
 
         if (scoredContacts.isEmpty()) return
 
-        for (c in scoredContacts) {
-            if (ringtones.isNotEmpty()) {
-                val index = (c.score - 1).coerceAtMost(ringtones.size - 1)
-                val ringtoneUri = ringtones[index].uri
+        val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
 
-                // Backup original if not backed up yet
-                val origKey = "orig_rt_${c.id}"
-                val currentBackup = prefs.getString(origKey, null)
-                if (currentBackup == null) {
-                    val backupVal = c.currentRingtone ?: PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER
-                    editor.putString(origKey, backupVal)
-                    editorModified = true
-                }
-                updates.add(c.id to ringtoneUri)
+        for (c in scoredContacts) {
+            // Backup original if not backed up yet
+            val origKey = "orig_rt_${c.id}"
+            val currentBackup = prefs.getString(origKey, null)
+            if (currentBackup == null) {
+                val backupVal = c.currentRingtone ?: PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER
+                editor.putString(origKey, backupVal)
+                editorModified = true
+            }
+
+            val resolvedRingtone = getResolvedRingtoneForScore(c.score, ringtones)
+            if (resolvedRingtone != null) {
+                updates.add(c.id to resolvedRingtone.uri)
+            } else {
+                // Resolved to blank / default!
+                val original = currentBackup ?: c.currentRingtone ?: PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER
+                val uriToSet: String? =
+                    if (original != PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER && isUriReadable(context, original)) {
+                        original
+                    } else {
+                        fallbackUri
+                    }
+                updates.add(c.id to uriToSet)
             }
         }
         if (editorModified) {

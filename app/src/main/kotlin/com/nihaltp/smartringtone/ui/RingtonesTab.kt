@@ -31,12 +31,86 @@ fun RingtonesTab(
     unavailableRingtones: Map<Int, Boolean>,
     playingUri: String?,
     onAdd: () -> Unit,
+    onAddBlank: () -> Unit,
     onDelete: (Int) -> Unit,
     onMove: (Int, Boolean) -> Unit,
     onTogglePlay: (String) -> Unit,
     onReplace: (Int) -> Unit,
 ) {
     var ringtoneToDelete by remember { mutableStateOf<Ringtone?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.add_options_title),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TextButton(
+                        onClick = {
+                            showAddDialog = false
+                            onAdd()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Default.MusicNote, contentDescription = null, tint = AccentColor)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.add_ringtone),
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            showAddDialog = false
+                            onAddBlank()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(Icons.Default.VolumeMute, contentDescription = null, tint = AccentColor)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.add_blank_ringtone),
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
 
     if (ringtoneToDelete != null) {
         val ringtone = ringtoneToDelete!!
@@ -148,7 +222,7 @@ fun RingtonesTab(
                 color = TextPrimary,
             )
             Button(
-                onClick = onAdd,
+                onClick = { showAddDialog = true },
                 colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 shape = RoundedCornerShape(6.dp),
@@ -185,17 +259,19 @@ fun RingtonesTab(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 itemsIndexed(ringtones) { index, ringtone ->
+                    val isBlank = ringtone.uri == "blank"
+                    val toggleUri = if (isBlank) "blank?id=${ringtone.id}" else ringtone.uri
                     RingtoneCard(
                         ringtone = ringtone,
                         index = index,
-                        isPlaying = playingUri == ringtone.uri,
+                        isPlaying = playingUri == toggleUri,
                         isFirst = index == 0,
                         isLast = index == ringtones.size - 1,
                         isUnavailable = unavailableRingtones[ringtone.id] ?: false,
                         onShowUnavailableDialog = { ringtoneToReplace = ringtone },
                         onDelete = { ringtoneToDelete = ringtone },
                         onMove = { up -> onMove(index, up) },
-                        onTogglePlay = { onTogglePlay(ringtone.uri) },
+                        onTogglePlay = { onTogglePlay(toggleUri) },
                     )
                 }
             }
@@ -260,7 +336,7 @@ fun RingtoneCard(
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = ringtone.name,
+                        text = if (ringtone.uri == "blank") stringResource(R.string.blank_ringtone_name) else ringtone.name,
                         color = TextPrimary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,

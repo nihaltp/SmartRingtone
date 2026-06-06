@@ -254,6 +254,7 @@ fun MainScreen(
                                 unavailableRingtones = unavailableRingtones,
                                 playingUri = playingUri,
                                 onAdd = { audioPickerLauncher.launch("audio/*") },
+                                onAddBlank = { viewModel.addBlankRingtone() },
                                 onDelete = { id -> viewModel.deleteRingtone(id) },
                                 onMove = { index, up -> viewModel.moveRingtone(index, up) },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },

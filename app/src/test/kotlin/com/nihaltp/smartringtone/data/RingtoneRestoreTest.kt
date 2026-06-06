@@ -167,4 +167,38 @@ class RingtoneRestoreTest {
         Mockito.verify(mockEditor).putBoolean("app_paused", true)
         Mockito.verify(mockEditor, Mockito.atLeastOnce()).apply()
     }
+
+    @Test
+    fun testResolvedRingtoneForScore() {
+        val ringtoneA = Ringtone(1, "Ringtone A", "content://rt_a")
+        val ringtoneBlank = Ringtone(2, "Blank Ringtone", "blank")
+        val ringtoneB = Ringtone(3, "Ringtone B", "content://rt_b")
+        val ringtoneBlank2 = Ringtone(4, "Blank Ringtone", "blank")
+
+        val ringtones = listOf(ringtoneA, ringtoneBlank, ringtoneB, ringtoneBlank2)
+
+        // 1. Score 0 or less should return null
+        assertEquals(null, ContactHelper.getResolvedRingtoneForScore(0, ringtones))
+        assertEquals(null, ContactHelper.getResolvedRingtoneForScore(-1, ringtones))
+
+        // 2. Score 1 (index 0: Ringtone A) -> Ringtone A
+        assertEquals(ringtoneA, ContactHelper.getResolvedRingtoneForScore(1, ringtones))
+
+        // 3. Score 2 (index 1: blank) -> should fall back to Ringtone A
+        assertEquals(ringtoneA, ContactHelper.getResolvedRingtoneForScore(2, ringtones))
+
+        // 4. Score 3 (index 2: Ringtone B) -> Ringtone B
+        assertEquals(ringtoneB, ContactHelper.getResolvedRingtoneForScore(3, ringtones))
+
+        // 5. Score 4 (index 3: blank) -> should fall back to Ringtone B
+        assertEquals(ringtoneB, ContactHelper.getResolvedRingtoneForScore(4, ringtones))
+
+        // 6. Score 5 (coerced to index 3: blank) -> should fall back to Ringtone B
+        assertEquals(ringtoneB, ContactHelper.getResolvedRingtoneForScore(5, ringtones))
+
+        // 7. If all preceding are blank
+        val allBlankRingtones = listOf(ringtoneBlank, ringtoneBlank2)
+        assertEquals(null, ContactHelper.getResolvedRingtoneForScore(1, allBlankRingtones))
+        assertEquals(null, ContactHelper.getResolvedRingtoneForScore(2, allBlankRingtones))
+    }
 }
