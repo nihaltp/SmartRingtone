@@ -42,3 +42,6 @@ build/
 local.properties
 key.properties
 *.jks
+
+# fastlane
+fastlane/report.xml

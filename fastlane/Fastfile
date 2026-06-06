@@ -157,6 +157,7 @@ platform :android do
         parts = line.split(" ", 2)
         sha = parts[0]
         msg = parts[1] || ""
+        next if msg.start_with?("chore: bump version to v")
         commits << { sha: sha, msg: msg }
       end
     end
@@ -227,7 +228,7 @@ platform :android do
       ordered_sections = types_order.map { |t| type_to_section[t] } + ["### Other"]
       ordered_sections.uniq.each do |sec|
         next if groups[sec].empty?
-        sec_content = "#{sec}\n"
+        sec_content = "#{sec}\n\n"
         sec_content += groups[sec].map { |c| "- #{c[:sha]}  #{c[:msg]}" }.join("\n")
         grouped_sections << sec_content
       end
