@@ -29,9 +29,77 @@ This escalation system ensures that contacts trying to reach you repeatedly rece
 * **Contact Manager**: List all device contacts, search using a multi-term (space-separated) keyword algorithm, and sort them by Name or Call Score.
 * **Score Override / Reset**: Manually reset the score of an individual contact or all contacts globally back to `0`, restoring their default ringtones.
 * **Tracked Call History (Logs)**: View a local log of calls processed by the background sync, tracking the call direction (incoming/outgoing), type (answered/missed/rejected), timestamp, and the exact score change.
-* **Screenshot/Privacy Mode**: Includes a privacy toggle in settings that mocks all contact names and numbers (e.g., Alice Vance, Bob Miller, Charlie Ross) while preserving settings, ideal for taking app screenshots or demonstration.
+* **Customizable Call Score Additions**: Configure custom score addition points for missed and rejected calls independently in Settings.
+* **Backup & Restore**: Safely export your settings, contact scores, and ringtone mappings to a file, and import them back at any time.
+* **Service Pauser**: Temporarily pause custom ringtone changes and automatically restore all contacts to their default/original settings. Extremely useful before uninstalling the app to ensure your device's contacts are left in their original state.
+* **Fallback Default Ringtone**: Choose a fallback ringtone to use when restoring contact ringtones if their original custom ringtone is deleted, missing, or was set to system default.
 * **Robust Diagnostics**: Turn on logging to capture errors and background events locally. Review logs in the built-in system log viewer, clear logs, or copy them to the clipboard to report bugs.
 * **Progressive Sync Notifications**: Displays a background notification progress bar during bulk contact updates to keep you informed of the sync progress.
+
+---
+
+## 📖 User Guide: How to Use the App
+
+Smart Ringtone is designed to run automatically in the background, but there are a few simple setup and configuration steps to get the most out of it.
+
+### 1. First-Time Setup & Permissions
+
+When you first open the app, you will be prompted to grant the necessary permissions. These are essential for the app to function:
+
+* **Contacts (`READ_CONTACTS`, `WRITE_CONTACTS`)**: Allows the app to read your contact list and update custom ringtones directly on each contact's card.
+* **Phone & Call Logs (`READ_PHONE_STATE`, `READ_CALL_LOG`)**: Allows the app to detect incoming calls, read call status (missed/rejected/answered), and adjust contact scores accordingly.
+* **Storage / Media Audio (`READ_EXTERNAL_STORAGE`, `READ_MEDIA_AUDIO`)**: Allows the app to access, select, and read custom audio files from your device's internal storage to use as custom contact ringtones.
+* **Notifications (`POST_NOTIFICATIONS`)**: Used to display background sync status progress notifications during bulk contact updates.
+
+### 2. Configure Your Ringtone Sequence
+
+Head over to the **Ringtones** tab. This is where you configure the sequence of ringtones used for escalation:
+
+* **Add Ringtone**: Tap the **Add** button. You can choose to add a standard audio file from your device, or add a **Blank Ringtone** (which creates silence/no sound, useful if you want to silence early missed calls from contacts).
+* **Preview Ringtones**: Tap the play/pause icon next to any ringtone to preview it.
+* **Reorder**: Use the **Move Up** / **Move Down** arrows to change the order.
+  * *Call Score = 0*: The contact uses their original custom ringtone or system default.
+  * *Call Score = 1*: Plays the first ringtone in the list.
+  * *Call Score = 2*: Plays the second ringtone in the list, and so on.
+  * *Call Score >= N*: Caps at the last (usually loudest/most urgent) ringtone in the list.
+* **Unavailable Files**: If an audio file in your sequence is deleted or moved, the app will flag it. Tap **Pick File** on the prompt to replace it.
+
+### 3. Track and Manage
+
+The **Contacts** tab lists all the contacts on your device:
+
+* **Search**: Use the search bar to find contacts by name. The search supports multi-term space-separated queries (e.g., searching "john smith" matches any contacts containing both terms).
+* **Sort**: Sort your contacts by **Name** or **Score**.
+* **Manually Reset Score**: Tap on a contact and select **Reset** to reset their score back to `0`.
+* **Reset All**: Tap the reset icon in the top bar to reset the call scores of all contacts back to `0`.
+
+### 4. Monitor Call Logs & Rebuild Score History
+
+You can keep track of how contact scores change in real time:
+
+* **Call Log Tab**: Turn on **Enable Log Tab** in settings to display the log tab in the bottom bar. Here, you'll see a detailed log of all call events, timestamps, and score modifications.
+* **Rescan History**: If you just installed the app and want to build contact scores using your existing call history, tap **Rescan History** (the sync icon) in the Call Log or Contacts tab.
+  > [!IMPORTANT]
+  > Rescanning will reset all scores to `0` and recalculate everything from the beginning of your system call log.
+
+### 5. Customize Settings
+
+Navigate to the **Settings** tab to fine-tune the app:
+
+* **Appearance**: Toggle between **Light Theme**, **Dark Theme**, or **System Default**.
+* **Fallback Default Ringtone**: Set a default backup ringtone to use if a contact's original custom ringtone was deleted, missing, or was set to system default.
+* **Call Score Additions**: Customize how many points are added to a contact's score. You can independently increase or decrease the score additions for **Missed calls** (default: +1) and **Rejected calls** (default: +2).
+* **Backup & Restore**: Safely export your settings, contact scores, and ringtone mappings to a backup file, and import them back at any time.
+* **Diagnostics**: Enable local error logging, view system diagnostic logs, or copy them to report bugs.
+
+### 6. Pausing & Uninstalling the App
+
+> [!WARNING]
+> Before uninstalling Smart Ringtone, you should pause the customization service to clean up your contact ringtones.
+
+* Go to **Settings** -> **Pause Service**.
+* When enabled, the app will temporarily restore all contact ringtones to their original settings/system defaults.
+* Keep this setting enabled before uninstalling the app to ensure your device's contacts are successfully reverted back to their original states.
 
 ---
 
@@ -54,7 +122,8 @@ To operate in the background and modify ringtones, the app requires:
 
 1. **Contacts (`READ_CONTACTS`, `WRITE_CONTACTS`)**: Needed to read your contact list and write custom ringtones back to individual contact cards.
 2. **Phone & Call Logs (`READ_PHONE_STATE`, `READ_CALL_LOG`)**: Required to monitor incoming calls and process call logs to update contact scores.
-3. **Notifications (`POST_NOTIFICATIONS`)**: Required on Android 13 (API 33) and above to show the sync status progress notification during batch updates.
+3. **Storage / Media Audio (`READ_EXTERNAL_STORAGE` for Android 12 & below, `READ_MEDIA_AUDIO` for Android 13+)**: Required to let users browse, select, and read custom ringtones from the device's local storage.
+4. **Notifications (`POST_NOTIFICATIONS`)**: Required on Android 13 (API 33) and above to show the sync status progress notification during batch updates.
 
 ---
 
