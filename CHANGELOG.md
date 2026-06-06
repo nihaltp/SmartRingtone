@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-06-06
+
+### Added
+
+- ced81d0  feat: WorkManager Background Sync Integration
+- d41867b  feat: add dynamic colors support
+
+### Maintenance
+
+- 6ce08b8  chore: delete app after screenshot is taken
+- 9545881  chore: update screenshot file to capture call log tab
+
 ## [1.3.0] - 2026-06-06
 
 ### Added
