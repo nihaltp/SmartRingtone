@@ -255,6 +255,7 @@ object ContactHelper {
         context: Context,
         uriString: String?,
     ): Boolean {
+        if (PreferenceHelper.isScreenshotMode(context)) return true
         if (uriString.isNullOrEmpty()) return false
         if (uriString == "blank") return true
         return try {

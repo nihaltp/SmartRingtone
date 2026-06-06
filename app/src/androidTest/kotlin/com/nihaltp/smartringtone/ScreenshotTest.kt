@@ -115,11 +115,6 @@ class ScreenshotTest {
         composeTestRule.waitForIdle()
         Thread.sleep(1000)
 
-        // Turn off logging to avoid logs tab
-        composeTestRule.onNodeWithText("Enable Logging").performClick()
-        composeTestRule.waitForIdle()
-        Thread.sleep(1000)
-
         // Click Light Theme option
         composeTestRule.onNodeWithText("Light Theme").performClick()
         composeTestRule.waitForIdle()
