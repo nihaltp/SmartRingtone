@@ -5,12 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
 import android.util.Log
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.nihaltp.smartringtone.data.AppLogger
-import com.nihaltp.smartringtone.data.CallSyncHelper
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.nihaltp.smartringtone.data.CallSyncWorker
 
 class CallReceiver : BroadcastReceiver() {
     override fun onReceive(
@@ -23,21 +22,19 @@ class CallReceiver : BroadcastReceiver() {
             AppLogger.log(context, "CallReceiver", "Phone state changed: $state")
 
             if (state == TelephonyManager.EXTRA_STATE_IDLE) {
-                // Call ended, missed, or rejected.
-                val pendingResult = goAsync()
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        // Wait a brief moment to allow the dialer app to write the call log entry
-                        delay(1500)
-                        Log.d("CallReceiver", "Syncing call logs after call completion...")
-                        AppLogger.log(context, "CallReceiver", "Syncing call logs after call completion...")
-                        CallSyncHelper.syncCallLogs(context)
-                    } catch (e: Exception) {
-                        Log.e("CallReceiver", "Error in CallReceiver sync", e)
-                        AppLogger.log(context, "CallReceiver", "Error in CallReceiver sync", e)
-                    } finally {
-                        pendingResult.finish()
-                    }
+                // Call ended, missed, or rejected. Schedule sync job via WorkManager.
+                Log.d("CallReceiver", "Scheduling CallSyncWorker unique work...")
+                AppLogger.log(context, "CallReceiver", "Scheduling CallSyncWorker unique work...")
+                try {
+                    val workRequest = OneTimeWorkRequestBuilder<CallSyncWorker>().build()
+                    WorkManager.getInstance(context).enqueueUniqueWork(
+                        "CallSyncWork",
+                        ExistingWorkPolicy.REPLACE,
+                        workRequest,
+                    )
+                } catch (e: Exception) {
+                    Log.e("CallReceiver", "Failed to enqueue WorkManager job", e)
+                    AppLogger.log(context, "CallReceiver", "Failed to enqueue WorkManager job: ${e.message}", e)
                 }
             }
         }
