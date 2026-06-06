@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.nihaltp.smartringtone.BuildConfig
 import com.nihaltp.smartringtone.R
 import com.nihaltp.smartringtone.data.GitHubIssueHelper
 
@@ -383,7 +384,13 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                                     android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
                                 }
                             } else {
-                                exportLauncher.launch("smartringtone_backup.json")
+                                val backupFileName =
+                                    if (BuildConfig.DEBUG) {
+                                        "smartringtone_backup.debug.json"
+                                    } else {
+                                        "smartringtone_backup.json"
+                                    }
+                                exportLauncher.launch(backupFileName)
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
