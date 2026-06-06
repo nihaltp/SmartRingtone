@@ -134,17 +134,19 @@ class ScreenshotTest {
         Screengrab.screenshot(screenshotCount.toString())
         screenshotCount++
 
+        // Navigate to Call Log and capture
+        composeTestRule.onNodeWithText("Call Log").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
         // Navigate to Settings and capture
         composeTestRule.onNodeWithText("Settings").performClick()
         composeTestRule.waitForIdle()
         Thread.sleep(1000)
         Screengrab.screenshot(screenshotCount.toString())
         screenshotCount++
-
-        // Navigate back to Settings to switch to Dark Theme
-        composeTestRule.onNodeWithText("Settings").performClick()
-        composeTestRule.waitForIdle()
-        Thread.sleep(1000)
 
         // Click Dark Theme option
         composeTestRule.onNodeWithText("Dark Theme").performClick()
@@ -160,6 +162,13 @@ class ScreenshotTest {
 
         // Navigate to Contacts and capture in Dark Mode
         composeTestRule.onNodeWithText("Contacts").performClick()
+        composeTestRule.waitForIdle()
+        Thread.sleep(1000)
+        Screengrab.screenshot(screenshotCount.toString())
+        screenshotCount++
+
+        // Navigate to Call Log and capture
+        composeTestRule.onNodeWithText("Call Log").performClick()
         composeTestRule.waitForIdle()
         Thread.sleep(1000)
         Screengrab.screenshot(screenshotCount.toString())
