@@ -85,6 +85,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     val versionName = remember { GitHubIssueHelper.getAppVersionName(context) }
     val versionCode = remember { GitHubIssueHelper.getAppVersionCode(context) }
     val installSource = remember { GitHubIssueHelper.getInstallSource(context) }
+    val downloadSource = remember { GitHubIssueHelper.getDownloadSource(context) }
 
     if (showLicensesDialog) {
         LicensesDialog(onDismiss = { showLicensesDialog = false })
@@ -688,7 +689,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                     ) {
                         Column {
                             Text(
-                                text = stringResource(R.string.install_source).uppercase(),
+                                text = stringResource(R.string.installer).uppercase(),
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextSecondary,
@@ -696,7 +697,39 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = installSource.toString(),
+                                text = installSource,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // Download Source box
+                    Box(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .background(BackgroundColor, shape = RoundedCornerShape(4.dp))
+                                .border(BorderStroke(1.dp, BorderColor), RoundedCornerShape(4.dp))
+                                .padding(12.dp),
+                    ) {
+                        Column {
+                            Text(
+                                text = stringResource(R.string.download_source).uppercase(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = downloadSource,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary,

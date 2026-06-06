@@ -46,10 +46,33 @@ object GitHubIssueHelper {
 
         return when (installerPackage) {
             "org.fdroid.fdroid" -> "F-Droid"
+            "com.looker.droidify" -> "Droid-ify"
             "com.android.vending" -> "Google Play Store"
             "com.amazon.venezia" -> "Amazon Appstore"
             null, "", "com.google.android.packageinstaller", "com.android.packageinstaller" -> "Sideload / ADB / Local Installer"
             else -> installerPackage
+        }
+    }
+
+    fun getDownloadSource(context: Context): String {
+        val downloaderPackage =
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                try {
+                    context.packageManager.getInstallSourceInfo(context.packageName).originatingPackageName
+                } catch (e: Exception) {
+                    null
+                }
+            } else {
+                null
+            }
+
+        return when (downloaderPackage) {
+            "org.fdroid.fdroid" -> "F-Droid"
+            "com.looker.droidify" -> "Droid-ify"
+            "com.android.vending" -> "Google Play Store"
+            "com.amazon.venezia" -> "Amazon Appstore"
+            null, "", "com.google.android.packageinstaller", "com.android.packageinstaller" -> "Sideload / ADB / Local Installer"
+            else -> downloaderPackage
         }
     }
 
@@ -61,6 +84,7 @@ object GitHubIssueHelper {
         val versionName = getAppVersionName(context)
         val versionCode = getAppVersionCode(context)
         val installSource = getInstallSource(context)
+        val downloadSource = getDownloadSource(context)
 
         val exceptionName = throwable.javaClass.simpleName.ifEmpty { throwable.javaClass.name }
         val errorMessage = throwable.message?.take(60)?.replace('\n', ' ') ?: "Unknown Error"
@@ -77,6 +101,7 @@ object GitHubIssueHelper {
             - **App Version Name:** $versionName
             - **App Version Code:** $versionCode
             - **Installation Source:** $installSource
+            - **Download Source:** $downloadSource
 
             ### 🔍 Stack Trace
             ```kotlin
