@@ -261,6 +261,7 @@ object ContactHelper {
         ringtones: List<Ringtone>? = null,
     ) {
         if (PreferenceHelper.isScreenshotMode(context)) return
+        if (PreferenceHelper.isAppPaused(context)) return
         val activeRingtones = ringtones ?: PreferenceHelper.getRingtones(context)
 
         if (newScore == 0) {
@@ -335,6 +336,7 @@ object ContactHelper {
         ringtones: List<Ringtone>,
     ) {
         if (PreferenceHelper.isScreenshotMode(context)) return
+        if (PreferenceHelper.isAppPaused(context)) return
         val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
         val editor = prefs.edit()
         var editorModified = false
@@ -419,6 +421,45 @@ object ContactHelper {
             } else {
                 updates.add(c.id to fallbackUri)
             }
+        }
+        editor.apply()
+
+        if (updates.isNotEmpty()) {
+            val total = updates.size
+            val chunkSize = 50
+            for (i in 0 until total step chunkSize) {
+                val chunk = updates.subList(i, minOf(i + chunkSize, total))
+                updateContactsRingtones(context, chunk)
+                NotificationHelper.showProgressNotification(context, minOf(i + chunkSize, total), total)
+            }
+            NotificationHelper.dismissNotification(context)
+        }
+    }
+
+    fun restoreAllRingtonesToDefault(context: Context) {
+        if (PreferenceHelper.isScreenshotMode(context)) return
+        val prefs = context.getSharedPreferences("RingtoneChangerPrefs", Context.MODE_PRIVATE)
+        val editor = prefs.edit()
+
+        val allOriginals = PreferenceHelper.getAllOriginalRingtones(context)
+        if (allOriginals.isEmpty()) return
+
+        val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
+        val updates = mutableListOf<Pair<String, String?>>()
+
+        for ((contactId, original) in allOriginals) {
+            val uriToSet: String? =
+                if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
+                    fallbackUri
+                } else {
+                    if (isUriReadable(context, original)) {
+                        original
+                    } else {
+                        fallbackUri
+                    }
+                }
+            updates.add(contactId to uriToSet)
+            editor.remove("orig_rt_$contactId")
         }
         editor.apply()
 

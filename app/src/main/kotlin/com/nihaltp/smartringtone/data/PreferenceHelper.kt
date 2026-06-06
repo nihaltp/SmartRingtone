@@ -13,6 +13,7 @@ object PreferenceHelper {
     private const val KEY_CALL_LOGS = "call_logs_history"
     private const val KEY_FALLBACK_RINGTONE_URI = "fallback_ringtone_uri"
     private const val KEY_FALLBACK_RINGTONE_NAME = "fallback_ringtone_name"
+    private const val KEY_APP_PAUSED = "app_paused"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -235,5 +236,18 @@ object PreferenceHelper {
                 .remove(KEY_FALLBACK_RINGTONE_NAME)
                 .apply()
         }
+    }
+
+    fun isAppPaused(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_APP_PAUSED, false)
+    }
+
+    fun setAppPaused(
+        context: Context,
+        paused: Boolean,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_APP_PAUSED, paused).apply()
     }
 }

@@ -107,4 +107,9 @@
     <string name="select_fallback_ringtone_btn">Select Ringtone</string>
     <string name="clear_fallback_ringtone_btn">Clear Fallback</string>
     <string name="fallback_ringtone_not_set">Not Selected (Uses System Default)</string>
+
+    <!-- Pause Settings -->
+    <string name="settings_pause">Pause Ringtone Customization</string>
+    <string name="enable_pause">Pause Service</string>
+    <string name="enable_pause_desc">Temporarily pause custom ringtone changes. When enabled, all contact ringtones are restored to their default/original settings. Note: Use this setting before uninstalling this app to ensure all ringtones are successfully reverted.</string>
 </resources>

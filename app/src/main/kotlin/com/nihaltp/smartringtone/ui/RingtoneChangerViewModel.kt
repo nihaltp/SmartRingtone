@@ -52,6 +52,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _fallbackRingtoneName = MutableStateFlow<String?>(null)
     val fallbackRingtoneName: StateFlow<String?> = _fallbackRingtoneName
 
+    private val _isAppPaused = MutableStateFlow(false)
+    val isAppPaused: StateFlow<Boolean> = _isAppPaused
+
     private var mediaPlayer: MediaPlayer? = null
     private var currentRingtone: android.media.Ringtone? = null
 
@@ -60,6 +63,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         _theme.value = PreferenceHelper.getTheme(context)
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
+        _isAppPaused.value = PreferenceHelper.isAppPaused(context)
         loadData()
     }
 
@@ -425,6 +429,32 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 AppLogger.log(context, "ViewModel", "Fallback default ringtone cleared")
             } catch (e: Exception) {
                 AppLogger.log(context, "ViewModel", "clearFallbackRingtone failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun setAppPaused(paused: Boolean) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                withContext(Dispatchers.IO) {
+                    PreferenceHelper.setAppPaused(context, paused)
+                    if (paused) {
+                        ContactHelper.restoreAllRingtonesToDefault(context)
+                    } else {
+                        val contactsList = ContactHelper.getContacts(context)
+                        val ringtonesList = PreferenceHelper.getRingtones(context)
+                        ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, ringtonesList)
+                    }
+                }
+                _isAppPaused.value = paused
+                AppLogger.log(context, "ViewModel", "App pause state changed to: $paused")
+                loadData()
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "setAppPaused failed", e)
                 _error.value = e
             } finally {
                 _isLoading.value = false

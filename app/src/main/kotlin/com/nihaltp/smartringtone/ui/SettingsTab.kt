@@ -40,6 +40,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
 
     val isLoggingEnabled by viewModel.isLoggingEnabled.collectAsState()
     val logsText by viewModel.logsText.collectAsState()
+    val isAppPaused by viewModel.isAppPaused.collectAsState()
 
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showLogsViewer by remember { mutableStateOf(false) }
@@ -74,6 +75,60 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                 .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        // Pause App Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_pause),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setAppPaused(!isAppPaused) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.enable_pause),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                        )
+                        Text(
+                            text = stringResource(R.string.enable_pause_desc),
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            lineHeight = 16.sp,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Switch(
+                        checked = isAppPaused,
+                        onCheckedChange = { viewModel.setAppPaused(it) },
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = AccentColor,
+                                uncheckedThumbColor = TextSecondary,
+                                uncheckedTrackColor = BorderColor,
+                            ),
+                    )
+                }
+            }
+        }
+
         // Theme Card
         Card(
             modifier = Modifier.fillMaxWidth(),
