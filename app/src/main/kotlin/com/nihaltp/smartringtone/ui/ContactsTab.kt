@@ -35,6 +35,7 @@ fun ContactsTab(
     onResetScore: (String) -> Unit,
     onResetAll: () -> Unit,
     onTogglePlay: (String) -> Unit,
+    onRescanContact: (String) -> Unit,
 ) {
     var sortBy by rememberSaveable { mutableStateOf(ContactSortOrder.SCORE) }
     var sortAscending by rememberSaveable { mutableStateOf(false) }
@@ -74,6 +75,7 @@ fun ContactsTab(
 
     var showResetAllDialog by remember { mutableStateOf(false) }
     var contactToReset by remember { mutableStateOf<Contact?>(null) }
+    var activeContactActions by remember { mutableStateOf<Contact?>(null) }
 
     if (showResetAllDialog) {
         AlertDialog(
@@ -153,6 +155,69 @@ fun ContactsTab(
                         text = stringResource(R.string.cancel),
                         color = TextSecondary,
                     )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    if (activeContactActions != null) {
+        val activeContact = activeContactActions!!
+        AlertDialog(
+            onDismissRequest = { activeContactActions = null },
+            title = {
+                Text(
+                    text = activeContact.name,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.contact_actions_message),
+                )
+            },
+            confirmButton = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (activeContact.score > 0) {
+                        TextButton(
+                            onClick = {
+                                contactToReset = activeContact
+                                activeContactActions = null
+                            },
+                        ) {
+                            Text(
+                                text = stringResource(R.string.reset),
+                                color = AccentColor,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            onRescanContact(activeContact.id)
+                            activeContactActions = null
+                        },
+                    ) {
+                        Text(
+                            text = stringResource(R.string.rescan_confirm_btn),
+                            color = TextSecondary,
+                        )
+                    }
+                    TextButton(
+                        onClick = { activeContactActions = null },
+                    ) {
+                        Text(
+                            text = stringResource(R.string.cancel),
+                            color = AccentColor,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             },
             containerColor = CardBackground,
@@ -281,10 +346,10 @@ fun ContactsTab(
                         contact = contact,
                         ringtones = ringtones,
                         isPlaying = contact.currentRingtone != null && playingUri == contact.currentRingtone,
-                        onResetScore = { contactToReset = contact },
                         onTogglePlay = {
                             contact.currentRingtone?.let { onTogglePlay(it) }
                         },
+                        onClick = { activeContactActions = contact },
                     )
                 }
             }
@@ -297,20 +362,14 @@ fun ContactCard(
     contact: Contact,
     ringtones: List<Ringtone>,
     isPlaying: Boolean,
-    onResetScore: () -> Unit,
     onTogglePlay: () -> Unit,
+    onClick: () -> Unit,
 ) {
     Card(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .then(
-                    if (contact.score > 0) {
-                        Modifier.clickable { onResetScore() }
-                    } else {
-                        Modifier
-                    },
-                ),
+                .clickable { onClick() },
         shape = RoundedCornerShape(6.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         border = BorderStroke(1.dp, BorderColor),
@@ -413,19 +472,6 @@ fun ContactCard(
                                 tint = if (isPlaying) AccentColor else TextPrimary,
                                 modifier = Modifier.size(16.dp),
                             )
-                        }
-                    }
-                    if (contact.score > 0) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(
-                            onClick = onResetScore,
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                            modifier = Modifier.height(24.dp),
-                            colors = ButtonDefaults.textButtonColors(contentColor = AccentColor),
-                        ) {
-                            Icon(Icons.Default.RotateLeft, contentDescription = null, modifier = Modifier.size(12.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(stringResource(R.string.reset), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

@@ -272,6 +272,176 @@ object CallSyncHelper {
         }
     }
 
+    fun syncContactCallLogs(
+        context: Context,
+        targetContactId: String,
+    ) {
+        synchronized(syncLock) {
+            if (PreferenceHelper.isScreenshotMode(context)) return
+            AppLogger.log(context, "CallSyncHelper", "syncContactCallLogs starting for contactId=$targetContactId")
+
+            // 1. Reset target contact score to 0 in memory and in system
+            PreferenceHelper.setContactScore(context, targetContactId, 0)
+            ContactHelper.updateContactRingtoneBasedOnScore(context, targetContactId, 0)
+
+            // 2. Remove target contact's entries from local call history
+            val contactName = ContactHelper.getContactName(context, targetContactId)
+            val history = PreferenceHelper.getCallLogsHistory(context).toMutableList()
+            val removedFromHistory =
+                history.removeAll { entry ->
+                    val entryContactId = ContactHelper.getContactIdFromNumber(context, entry.number)
+                    val matchesId = entryContactId == targetContactId
+                    val matchesName = contactName.isNotEmpty() && entry.name == contactName
+                    matchesId || matchesName
+                }
+
+            val contentResolver = context.contentResolver
+            val projection =
+                arrayOf(
+                    CallLog.Calls.NUMBER,
+                    CallLog.Calls.TYPE,
+                    CallLog.Calls.DURATION,
+                    CallLog.Calls.DATE,
+                )
+            // Query all call logs from newest to oldest
+            val sortOrder = "${CallLog.Calls.DATE} DESC"
+
+            try {
+                val cursor =
+                    contentResolver.query(
+                        CallLog.Calls.CONTENT_URI,
+                        projection,
+                        null,
+                        null,
+                        sortOrder,
+                    )
+
+                cursor?.use {
+                    val numCol = it.getColumnIndex(CallLog.Calls.NUMBER)
+                    val typeCol = it.getColumnIndex(CallLog.Calls.TYPE)
+                    val durCol = it.getColumnIndex(CallLog.Calls.DURATION)
+                    val dateCol = it.getColumnIndex(CallLog.Calls.DATE)
+
+                    val missedAddition = PreferenceHelper.getScoreAdditionMissed(context)
+                    val rejectedAddition = PreferenceHelper.getScoreAdditionRejected(context)
+
+                    val numberToContactId = mutableMapOf<String, String?>()
+                    val newEntries = mutableListOf<CallLogEntry>()
+                    var accumulatedScore = 0
+
+                    while (it.moveToNext()) {
+                        val number = it.getString(numCol) ?: ""
+                        val type = it.getInt(typeCol)
+                        val duration = it.getLong(durCol)
+                        val date = it.getLong(dateCol)
+
+                        // Resolve contact ID for this number
+                        val contactId =
+                            numberToContactId.getOrPut(number) {
+                                ContactHelper.getContactIdFromNumber(context, number)
+                            }
+
+                        // We only care about call logs for our target contact
+                        if (contactId != targetContactId) {
+                            continue
+                        }
+
+                        var scoreChangeText = "No Change"
+                        var directionText = "Unknown"
+                        var typeText = "Unknown"
+                        var isReset = false
+                        var scoreDelta = 0
+
+                        when (type) {
+                            CallLog.Calls.MISSED_TYPE -> {
+                                directionText = "INCOMING"
+                                typeText = "MISSED"
+                                scoreChangeText = "+$missedAddition"
+                                scoreDelta = missedAddition
+                            }
+                            CallLog.Calls.REJECTED_TYPE -> {
+                                directionText = "INCOMING"
+                                typeText = "REJECTED"
+                                scoreChangeText = "+$rejectedAddition"
+                                scoreDelta = rejectedAddition
+                            }
+                            CallLog.Calls.INCOMING_TYPE -> {
+                                directionText = "INCOMING"
+                                if (duration > 0) {
+                                    typeText = "ANSWERED"
+                                    scoreChangeText = "Reset to 0"
+                                    isReset = true
+                                } else {
+                                    typeText = "MISSED"
+                                    scoreChangeText = "+$missedAddition"
+                                    scoreDelta = missedAddition
+                                }
+                            }
+                            CallLog.Calls.OUTGOING_TYPE -> {
+                                directionText = "OUTGOING"
+                                if (duration > 0) {
+                                    typeText = "ANSWERED"
+                                    scoreChangeText = "Reset to 0"
+                                    isReset = true
+                                } else {
+                                    typeText = "UNANSWERED"
+                                }
+                            }
+                        }
+
+                        if (isReset) {
+                            // Hit a reset (answered call) chronologically before any missed/rejected calls we accumulated.
+                            // We record the reset call in history and stop scanning!
+                            val entry =
+                                CallLogEntry(
+                                    number = number,
+                                    name = contactName,
+                                    direction = directionText,
+                                    type = typeText,
+                                    timestamp = date,
+                                    scoreChange = scoreChangeText,
+                                )
+                            newEntries.add(entry)
+                            Log.d(
+                                "CallSyncHelper",
+                                "Target contact $targetContactId encountered reset call at $date. Stopping scan.",
+                            )
+                            break
+                        } else if (scoreChangeText != "No Change") {
+                            accumulatedScore += scoreDelta
+                            val entry =
+                                CallLogEntry(
+                                    number = number,
+                                    name = contactName,
+                                    direction = directionText,
+                                    type = typeText,
+                                    timestamp = date,
+                                    scoreChange = scoreChangeText,
+                                )
+                            newEntries.add(entry)
+                        }
+                    }
+
+                    // Apply the final accumulated score
+                    PreferenceHelper.setContactScore(context, targetContactId, accumulatedScore)
+                    ContactHelper.updateContactRingtoneBasedOnScore(context, targetContactId, accumulatedScore)
+
+                    // Save history if modified or new entries found
+                    if (newEntries.isNotEmpty() || removedFromHistory) {
+                        history.addAll(0, newEntries)
+                        while (history.size > 50) {
+                            history.removeAt(history.size - 1)
+                        }
+                        PreferenceHelper.saveCallLogsHistory(context, history)
+                    }
+                }
+            } catch (e: SecurityException) {
+                Log.e("CallSyncHelper", "Permission denial accessing call logs for contact", e)
+                AppLogger.log(context, "CallSyncHelper", "Permission denial accessing call logs for contact", e)
+            }
+        }
+    }
+
     fun processCall(
         context: Context,
         number: String,

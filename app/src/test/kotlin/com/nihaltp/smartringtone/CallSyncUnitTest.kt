@@ -436,4 +436,74 @@ class CallSyncUnitTest {
         }
         Mockito.verify(mockEditor, Mockito.atLeastOnce()).apply()
     }
+
+    @Test
+    fun testSyncContactCallLogs() {
+        val contactId = "123"
+        val contactNumber = "+15550199"
+
+        // Mock shared preferences
+        Mockito.`when`(mockPrefs.all).thenReturn(emptyMap<String, Any>())
+
+        val mockCallLogCursor = mock<Cursor>()
+        var currentRow = -1
+        Mockito.`when`(mockCallLogCursor.moveToNext()).thenAnswer {
+            currentRow++
+            currentRow < 3
+        }
+        Mockito.`when`(mockCallLogCursor.getColumnIndex(CallLog.Calls.NUMBER)).thenReturn(0)
+        Mockito.`when`(mockCallLogCursor.getColumnIndex(CallLog.Calls.TYPE)).thenReturn(1)
+        Mockito.`when`(mockCallLogCursor.getColumnIndex(CallLog.Calls.DURATION)).thenReturn(2)
+        Mockito.`when`(mockCallLogCursor.getColumnIndex(CallLog.Calls.DATE)).thenReturn(3)
+
+        Mockito.`when`(mockCallLogCursor.getString(0)).thenReturn(contactNumber)
+        // Missed (newest), Answered (middle), Rejected (oldest)
+        Mockito.`when`(mockCallLogCursor.getInt(1)).thenReturn(
+            CallLog.Calls.MISSED_TYPE,
+            CallLog.Calls.INCOMING_TYPE,
+            CallLog.Calls.REJECTED_TYPE,
+        )
+        Mockito.`when`(mockCallLogCursor.getLong(2)).thenReturn(0L, 10L, 0L)
+        Mockito.`when`(mockCallLogCursor.getLong(3)).thenReturn(3000L, 2000L, 1000L)
+
+        // Mock ContactHelper lookup
+        val mockLookupCursor = mock<Cursor>()
+        Mockito.`when`(mockLookupCursor.moveToFirst()).thenReturn(true)
+        Mockito.`when`(mockLookupCursor.getColumnIndex(Mockito.anyString())).thenReturn(0)
+        Mockito.`when`(mockLookupCursor.getString(0)).thenReturn(contactId)
+
+        val mockNameCursor = mock<Cursor>()
+        Mockito.`when`(mockNameCursor.moveToFirst()).thenReturn(true)
+        Mockito.`when`(mockNameCursor.getColumnIndex(Mockito.anyString())).thenReturn(0)
+        Mockito.`when`(mockNameCursor.getString(0)).thenReturn("Test Contact")
+
+        Mockito.`when`(
+            mockContentResolver.query(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+            ),
+        ).thenAnswer { invocation ->
+            val projection = invocation.arguments[1] as? Array<*>
+            val projList = projection?.toList() ?: emptyList<Any?>()
+            if (projList.contains("date")) {
+                mockCallLogCursor
+            } else if (projList.contains("_id")) {
+                mockLookupCursor
+            } else {
+                mockNameCursor
+            }
+        }
+
+        // Run contact-specific sync
+        CallSyncHelper.syncContactCallLogs(mockContext, contactId)
+
+        // Verify contact score set to 0 initially, and then set to 1 (from the missed call after reset)
+        // Note: the rejected call happened before the reset call, so it should be ignored.
+        Mockito.verify(mockEditor).putInt(eq("score_$contactId"), eq(0))
+        Mockito.verify(mockEditor).putInt(eq("score_$contactId"), eq(1))
+        Mockito.verify(mockEditor, Mockito.atLeastOnce()).apply()
+    }
 }

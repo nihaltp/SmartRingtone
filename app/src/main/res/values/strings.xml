@@ -40,6 +40,7 @@
     <string name="reset_all_confirm_message">Are you sure you want to reset the call scores for all contacts to 0? This will restore their ringtones to default.</string>
     <string name="reset_contact_confirm_title">Reset Contact Score</string>
     <string name="reset_contact_confirm_message">Are you sure you want to reset the call score for %1$s to 0?</string>
+    <string name="contact_actions_message">Select an action for this contact:</string>
     <string name="tracked_call_history">Tracked Call History</string>
     <string name="clear_logs">Clear Logs</string>
     <string name="clear_logs_confirm_title">Clear Call Logs?</string>

@@ -934,4 +934,30 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
             }
         }
     }
+
+    fun rescanContactCallLogs(contactId: String) {
+        viewModelScope.launch {
+            stateMutex.withLock {
+                AppLogger.log(context, "ViewModel", "rescanContactCallLogs($contactId) started")
+                _isLoading.value = true
+                try {
+                    withContext(Dispatchers.IO) {
+                        CallSyncHelper.runSynchronized {
+                            CallSyncHelper.syncContactCallLogs(context, contactId)
+                            val loadedContacts = ContactHelper.getContacts(context)
+                            val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
+                            _contacts.value = loadedContacts
+                            _callLogs.value = loadedCallLogs
+                        }
+                    }
+                    AppLogger.log(context, "ViewModel", "rescanContactCallLogs($contactId) completed successfully")
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "rescanContactCallLogs($contactId) failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
+    }
 }

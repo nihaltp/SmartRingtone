@@ -275,6 +275,7 @@ fun MainScreen(
                                 onResetScore = { id -> viewModel.resetContactScore(id) },
                                 onResetAll = { viewModel.resetAllScores() },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },
+                                onRescanContact = { id -> viewModel.rescanContactCallLogs(id) },
                             )
                         AppTab.LOG ->
                             CallLogsTab(
