@@ -44,6 +44,8 @@ object CallSyncHelper {
                     )
 
                 var newLastSyncTime = lastSyncTime
+                val missedAddition = PreferenceHelper.getScoreAdditionMissed(context)
+                val rejectedAddition = PreferenceHelper.getScoreAdditionRejected(context)
 
                 cursor?.use {
                     val numCol = it.getColumnIndex(CallLog.Calls.NUMBER)
@@ -122,14 +124,14 @@ object CallSyncHelper {
                             CallLog.Calls.MISSED_TYPE -> {
                                 directionText = "INCOMING"
                                 typeText = "MISSED"
-                                scoreChangeText = "+1"
-                                scoreDelta = 1
+                                scoreChangeText = "+$missedAddition"
+                                scoreDelta = missedAddition
                             }
                             CallLog.Calls.REJECTED_TYPE -> {
                                 directionText = "INCOMING"
                                 typeText = "REJECTED"
-                                scoreChangeText = "+2"
-                                scoreDelta = 2
+                                scoreChangeText = "+$rejectedAddition"
+                                scoreDelta = rejectedAddition
                             }
                             CallLog.Calls.INCOMING_TYPE -> {
                                 directionText = "INCOMING"
@@ -139,8 +141,8 @@ object CallSyncHelper {
                                     isReset = true
                                 } else {
                                     typeText = "MISSED"
-                                    scoreChangeText = "+1"
-                                    scoreDelta = 1
+                                    scoreChangeText = "+$missedAddition"
+                                    scoreDelta = missedAddition
                                 }
                             }
                             CallLog.Calls.OUTGOING_TYPE -> {
@@ -459,19 +461,21 @@ object CallSyncHelper {
             var scoreChangeText = "No Change"
             var directionText = "Unknown"
             var typeText = "Unknown"
+            val missedAddition = PreferenceHelper.getScoreAdditionMissed(context)
+            val rejectedAddition = PreferenceHelper.getScoreAdditionRejected(context)
 
             when (type) {
                 CallLog.Calls.MISSED_TYPE -> {
                     directionText = "INCOMING"
                     typeText = "MISSED"
-                    newScore += 1
-                    scoreChangeText = "+1"
+                    newScore += missedAddition
+                    scoreChangeText = "+$missedAddition"
                 }
                 CallLog.Calls.REJECTED_TYPE -> {
                     directionText = "INCOMING"
                     typeText = "REJECTED"
-                    newScore += 2
-                    scoreChangeText = "+2"
+                    newScore += rejectedAddition
+                    scoreChangeText = "+$rejectedAddition"
                 }
                 CallLog.Calls.INCOMING_TYPE -> {
                     directionText = "INCOMING"
@@ -481,8 +485,8 @@ object CallSyncHelper {
                         scoreChangeText = "Reset to 0"
                     } else {
                         typeText = "MISSED"
-                        newScore += 1
-                        scoreChangeText = "+1"
+                        newScore += missedAddition
+                        scoreChangeText = "+$missedAddition"
                     }
                 }
                 CallLog.Calls.OUTGOING_TYPE -> {

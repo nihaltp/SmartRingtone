@@ -105,6 +105,8 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     }
 
     val currentTheme by viewModel.theme.collectAsState()
+    val scoreAdditionMissed by viewModel.scoreAdditionMissed.collectAsState()
+    val scoreAdditionRejected by viewModel.scoreAdditionRejected.collectAsState()
 
     Column(
         modifier =
@@ -201,6 +203,44 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                     text = stringResource(R.string.theme_system),
                     selected = currentTheme == "system",
                     onClick = { viewModel.setTheme("system") },
+                )
+            }
+        }
+
+        // Call Score Additions Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_score_additions).uppercase(),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.settings_score_additions_desc),
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                ScoreAdditionRow(
+                    title = stringResource(R.string.score_addition_missed_calls),
+                    value = scoreAdditionMissed,
+                    onValueChange = { viewModel.setScoreAdditionMissed(it) },
+                )
+                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 4.dp))
+                ScoreAdditionRow(
+                    title = stringResource(R.string.score_addition_rejected_calls),
+                    value = scoreAdditionRejected,
+                    onValueChange = { viewModel.setScoreAdditionRejected(it) },
                 )
             }
         }
@@ -1051,5 +1091,79 @@ fun ThemeOptionRow(
                     unselectedColor = TextSecondary,
                 ),
         )
+    }
+}
+
+@Composable
+fun ScoreAdditionRow(
+    title: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { isExpanded = !isExpanded }
+                .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            text = title,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextPrimary,
+            modifier = Modifier.weight(1f),
+        )
+
+        if (!isExpanded) {
+            Text(
+                text = value.toString(),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = AccentColor,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.clickable(enabled = false) { },
+            ) {
+                IconButton(
+                    onClick = { if (value > 0) onValueChange(value - 1) },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Remove,
+                        contentDescription = "Decrease",
+                        tint = AccentColor,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                Text(
+                    text = value.toString(),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+
+                IconButton(
+                    onClick = { onValueChange(value + 1) },
+                    modifier = Modifier.size(24.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Increase",
+                        tint = AccentColor,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
     }
 }

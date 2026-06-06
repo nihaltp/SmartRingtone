@@ -31,6 +31,8 @@ class CallSyncTest {
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
+        PreferenceHelper.setScoreAdditionMissed(context, 1)
+        PreferenceHelper.setScoreAdditionRejected(context, 2)
     }
 
     @Test
@@ -59,6 +61,49 @@ class CallSyncTest {
             // Clean up
             deleteContact(context, contactId)
             PreferenceHelper.clearContactData(context, contactId)
+        }
+    }
+
+    @Test
+    fun testProcessCallWithConfigurableScoreAdditions() {
+        val testName = "Test Configurable CallSync Contact"
+        val testNumber = "+15550198"
+        val contactId = insertTestContact(context, testName, testNumber)
+
+        try {
+            // Configure custom score additions
+            PreferenceHelper.setScoreAdditionMissed(context, 3)
+            PreferenceHelper.setScoreAdditionRejected(context, 5)
+
+            // Set initial score to 0
+            PreferenceHelper.setContactScore(context, contactId, 0)
+
+            // Process a missed call
+            CallSyncHelper.processCall(
+                context = context,
+                number = testNumber,
+                type = CallLog.Calls.MISSED_TYPE,
+                duration = 0L,
+                date = System.currentTimeMillis(),
+            )
+            assertEquals(3, PreferenceHelper.getContactScore(context, contactId))
+
+            // Process a rejected call
+            CallSyncHelper.processCall(
+                context = context,
+                number = testNumber,
+                type = CallLog.Calls.REJECTED_TYPE,
+                duration = 0L,
+                date = System.currentTimeMillis(),
+            )
+            // 3 + 5 = 8
+            assertEquals(8, PreferenceHelper.getContactScore(context, contactId))
+        } finally {
+            // Clean up
+            deleteContact(context, contactId)
+            PreferenceHelper.clearContactData(context, contactId)
+            PreferenceHelper.setScoreAdditionMissed(context, 1)
+            PreferenceHelper.setScoreAdditionRejected(context, 2)
         }
     }
 

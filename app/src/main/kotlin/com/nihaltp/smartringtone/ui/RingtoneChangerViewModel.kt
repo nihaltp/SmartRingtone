@@ -57,6 +57,12 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _isAppPaused = MutableStateFlow(false)
     val isAppPaused: StateFlow<Boolean> = _isAppPaused
 
+    private val _scoreAdditionMissed = MutableStateFlow(1)
+    val scoreAdditionMissed: StateFlow<Int> = _scoreAdditionMissed
+
+    private val _scoreAdditionRejected = MutableStateFlow(2)
+    val scoreAdditionRejected: StateFlow<Int> = _scoreAdditionRejected
+
     private val _backupFileUri = MutableStateFlow<String?>(null)
     val backupFileUri: StateFlow<String?> = _backupFileUri
 
@@ -75,6 +81,8 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
         _isAppPaused.value = PreferenceHelper.isAppPaused(context)
+        _scoreAdditionMissed.value = PreferenceHelper.getScoreAdditionMissed(context)
+        _scoreAdditionRejected.value = PreferenceHelper.getScoreAdditionRejected(context)
         val savedBackupUri = PreferenceHelper.getBackupFileUri(context)
         _backupFileUri.value = savedBackupUri
         _backupFileName.value = savedBackupUri?.let { getUriDisplayName(context, Uri.parse(it)) }
@@ -602,6 +610,18 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setScoreAdditionMissed(value: Int) {
+        PreferenceHelper.setScoreAdditionMissed(context, value)
+        _scoreAdditionMissed.value = value
+        AppLogger.log(context, "ViewModel", "Score addition for missed calls changed to: $value")
+    }
+
+    fun setScoreAdditionRejected(value: Int) {
+        PreferenceHelper.setScoreAdditionRejected(context, value)
+        _scoreAdditionRejected.value = value
+        AppLogger.log(context, "ViewModel", "Score addition for rejected calls changed to: $value")
     }
 
     fun setAppPaused(paused: Boolean) {

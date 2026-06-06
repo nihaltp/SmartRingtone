@@ -15,6 +15,8 @@ object PreferenceHelper {
     private const val KEY_FALLBACK_RINGTONE_NAME = "fallback_ringtone_name"
     private const val KEY_APP_PAUSED = "app_paused"
     private const val KEY_BACKUP_FILE_URI = "backup_file_uri"
+    private const val KEY_SCORE_ADDITION_MISSED = "score_addition_missed"
+    private const val KEY_SCORE_ADDITION_REJECTED = "score_addition_rejected"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -296,6 +298,32 @@ object PreferenceHelper {
         }
     }
 
+    fun getScoreAdditionMissed(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_SCORE_ADDITION_MISSED, 1)
+    }
+
+    fun setScoreAdditionMissed(
+        context: Context,
+        value: Int,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_SCORE_ADDITION_MISSED, value).apply()
+    }
+
+    fun getScoreAdditionRejected(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_SCORE_ADDITION_REJECTED, 2)
+    }
+
+    fun setScoreAdditionRejected(
+        context: Context,
+        value: Int,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_SCORE_ADDITION_REJECTED, value).apply()
+    }
+
     fun exportPreferences(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val allPrefs = prefs.all.toMutableMap()
@@ -331,7 +359,10 @@ object PreferenceHelper {
                     is Number -> {
                         if (key == KEY_LAST_SYNC_TIME) {
                             editor.putLong(key, value.toLong())
-                        } else if (key.startsWith(KEY_SCORE_PREFIX)) {
+                        } else if (key.startsWith(KEY_SCORE_PREFIX) ||
+                            key == KEY_SCORE_ADDITION_MISSED ||
+                            key == KEY_SCORE_ADDITION_REJECTED
+                        ) {
                             editor.putInt(key, value.toInt())
                         } else {
                             editor.putLong(key, value.toLong())

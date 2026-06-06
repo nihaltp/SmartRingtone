@@ -152,4 +152,10 @@
     <string name="ringtone_unavailable_title">Ringtone Unavailable</string>
     <string name="ringtone_unavailable_desc">The audio file for \"%1$s\" is not available on this device. Would you like to select a new file to replace it?</string>
     <string name="pick_file_btn">Pick File</string>
+
+    <!-- Call Score Additions Settings -->
+    <string name="settings_score_additions">Call Score Additions</string>
+    <string name="settings_score_additions_desc">Configure how many points are added to a contact\'s score when a call is missed or rejected.</string>
+    <string name="score_addition_missed_calls">Missed calls</string>
+    <string name="score_addition_rejected_calls">Rejected calls</string>
 </resources>

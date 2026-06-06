@@ -53,6 +53,12 @@ class CallSyncUnitTest {
         Mockito.`when`(mockContext.getSharedPreferences(any(), any())).thenReturn(mockPrefs)
         Mockito.`when`(mockPrefs.edit()).thenReturn(mockEditor)
         Mockito.`when`(mockPrefs.getBoolean(any(), any())).thenReturn(false)
+        Mockito.`when`(mockPrefs.getInt(any(), any())).thenAnswer { invocation ->
+            invocation.getArgument<Int>(1)
+        }
+        Mockito.`when`(mockPrefs.getLong(any(), any())).thenAnswer { invocation ->
+            invocation.getArgument<Long>(1)
+        }
         Mockito.`when`(mockPrefs.all).thenReturn(emptyMap<String, Any>())
         Mockito.`when`(mockContext.getString(any())).thenReturn("Dummy String")
         Mockito.`when`(mockContext.getString(any(), anyVararg())).thenReturn("Dummy String")
@@ -119,6 +125,60 @@ class CallSyncUnitTest {
 
         // Verify score was set to 2 in SharedPreferences
         Mockito.verify(mockEditor).putInt(eq("score_$contactId"), eq(2))
+    }
+
+    @Test
+    fun testProcessCallWithConfigurableScoreAdditions() {
+        val testNumber = "+15550199"
+        val contactId = "123"
+
+        // Mock phone lookup query cursor (1st query)
+        val mockLookupCursor = mock<Cursor>()
+        Mockito.`when`(mockLookupCursor.moveToFirst()).thenReturn(true)
+        Mockito.`when`(mockLookupCursor.getColumnIndex(Mockito.anyString())).thenReturn(0)
+        Mockito.`when`(mockLookupCursor.getString(0)).thenReturn(contactId)
+
+        // Mock name lookup query cursor (2nd query)
+        val mockNameCursor = mock<Cursor>()
+        Mockito.`when`(mockNameCursor.moveToFirst()).thenReturn(true)
+        Mockito.`when`(mockNameCursor.getColumnIndex(Mockito.anyString())).thenReturn(0)
+        Mockito.`when`(mockNameCursor.getString(0)).thenReturn("Test Contact")
+
+        // Mock ContentResolver queries sequentially
+        Mockito.`when`(
+            mockContentResolver.query(
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any(),
+            ),
+        ).thenReturn(mockLookupCursor, mockNameCursor)
+
+        // Mock getContactScore
+        Mockito.`when`(mockPrefs.getInt(eq("score_$contactId"), any())).thenReturn(2)
+
+        // Mock score addition preferences
+        Mockito.`when`(mockPrefs.getInt(eq("score_addition_missed"), any())).thenReturn(4)
+        Mockito.`when`(mockPrefs.getInt(eq("score_addition_rejected"), any())).thenReturn(6)
+
+        // Mock ringtone list (empty)
+        Mockito.`when`(mockPrefs.getString(eq("ringtones"), any())).thenReturn("[]")
+
+        // Mock contact update ringtone
+        Mockito.`when`(mockContentResolver.update(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(1)
+
+        // Call processCall with MISSED call
+        CallSyncHelper.processCall(
+            context = mockContext,
+            number = testNumber,
+            type = CallLog.Calls.MISSED_TYPE,
+            duration = 0L,
+            date = 1000L,
+        )
+
+        // Verify score was incremented by missed call addition (4), so 2 + 4 = 6
+        Mockito.verify(mockEditor).putInt(eq("score_$contactId"), eq(6))
     }
 
     @Test
@@ -394,7 +454,15 @@ class CallSyncUnitTest {
             }
         }
 
-        Mockito.`when`(mockPrefs.getInt(Mockito.anyString(), Mockito.anyInt())).thenReturn(0)
+        Mockito.`when`(mockPrefs.getInt(Mockito.anyString(), Mockito.anyInt())).thenAnswer { invocation ->
+            val key = invocation.arguments[0] as String
+            val defaultVal = invocation.arguments[1] as Int
+            if (key == "score_addition_missed" || key == "score_addition_rejected") {
+                defaultVal
+            } else {
+                0
+            }
+        }
         Mockito.`when`(mockPrefs.all).thenReturn(emptyMap<String, Any>())
 
         // Calculate expected scores using chronological forward reference loop
