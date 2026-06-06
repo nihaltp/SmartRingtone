@@ -1,0 +1,7 @@
+Smart Ringtone v1.2.0 (2026-06-06)
+
+Commits included in this release:
+- 6e39f4a  feat: add blank ringtone feature
+- 7628a7c  feat: add settings import/export
+- 36ab414  feat: add pause function
+- fd8d8ef  chore: update fastfile to not use version bump commits
