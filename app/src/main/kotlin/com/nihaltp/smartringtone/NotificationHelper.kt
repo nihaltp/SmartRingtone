@@ -51,6 +51,33 @@ object NotificationHelper {
         notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
+    fun showNotification(
+        context: Context,
+        title: String,
+        message: String,
+        progress: Int = 0,
+        maxProgress: Int = 0,
+        indeterminate: Boolean = false,
+    ) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        createNotificationChannel(context)
+
+        val builder =
+            NotificationCompat.Builder(context, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setSilent(true)
+
+        if (maxProgress > 0 || indeterminate) {
+            builder.setProgress(maxProgress, progress, indeterminate)
+        }
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
+    }
+
     fun dismissNotification(context: Context) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         notificationManager.cancel(NOTIFICATION_ID)

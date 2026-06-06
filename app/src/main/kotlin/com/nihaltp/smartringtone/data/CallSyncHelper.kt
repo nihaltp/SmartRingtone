@@ -66,6 +66,15 @@ object CallSyncHelper {
 
                     while (it.moveToNext()) {
                         processedLogs++
+                        if (totalLogs > 0) {
+                            com.nihaltp.smartringtone.NotificationHelper.showNotification(
+                                context,
+                                context.getString(R.string.sync_title),
+                                context.getString(R.string.sync_scanning_logs_progress, processedLogs, totalLogs),
+                                progress = processedLogs,
+                                maxProgress = totalLogs,
+                            )
+                        }
                         val number = it.getString(numCol) ?: ""
                         val type = it.getInt(typeCol)
                         val duration = it.getLong(durCol)
@@ -218,6 +227,15 @@ object CallSyncHelper {
                         PreferenceHelper.setContactScore(context, contactId, finalScore)
                         ContactHelper.updateContactRingtoneBasedOnScore(context, contactId, finalScore)
                         processedCount++
+                        if (totalChanged > 0) {
+                            com.nihaltp.smartringtone.NotificationHelper.showNotification(
+                                context,
+                                context.getString(R.string.sync_title),
+                                context.getString(R.string.sync_updating_ringtones, processedCount, totalChanged),
+                                progress = processedCount,
+                                maxProgress = totalChanged,
+                            )
+                        }
                         Log.d("CallSyncHelper", "Applied final score for contact $contactId: $finalScore")
                         AppLogger.log(context, "CallSyncHelper", "Applied final score for contact $contactId: $finalScore")
                     }
