@@ -14,6 +14,7 @@ object PreferenceHelper {
     private const val KEY_FALLBACK_RINGTONE_URI = "fallback_ringtone_uri"
     private const val KEY_FALLBACK_RINGTONE_NAME = "fallback_ringtone_name"
     private const val KEY_APP_PAUSED = "app_paused"
+    private const val KEY_BACKUP_FILE_URI = "backup_file_uri"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -249,5 +250,73 @@ object PreferenceHelper {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_APP_PAUSED, paused).apply()
+    }
+
+    fun getBackupFileUri(context: Context): String? {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_BACKUP_FILE_URI, null)
+    }
+
+    fun setBackupFileUri(
+        context: Context,
+        uriString: String?,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (uriString != null) {
+            prefs.edit().putString(KEY_BACKUP_FILE_URI, uriString).apply()
+        } else {
+            prefs.edit().remove(KEY_BACKUP_FILE_URI).apply()
+        }
+    }
+
+    fun exportPreferences(context: Context): String {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val allPrefs = prefs.all.toMutableMap()
+        allPrefs.remove(KEY_BACKUP_FILE_URI)
+        return gson.toJson(allPrefs)
+    }
+
+    fun importPreferences(
+        context: Context,
+        json: String,
+    ): Boolean {
+        return try {
+            val type = object : TypeToken<Map<String, Any?>>() {}.type
+            val map: Map<String, Any?> = gson.fromJson(json, type) ?: return false
+
+            // Restore all current custom ringtones in system DB first
+            ContactHelper.restoreAllRingtonesToDefault(context)
+
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val backupUri = prefs.getString(KEY_BACKUP_FILE_URI, null)
+
+            val editor = prefs.edit()
+            editor.clear()
+            if (backupUri != null) {
+                editor.putString(KEY_BACKUP_FILE_URI, backupUri)
+            }
+
+            for ((key, value) in map) {
+                if (value == null) continue
+                when (value) {
+                    is Boolean -> editor.putBoolean(key, value)
+                    is String -> editor.putString(key, value)
+                    is Number -> {
+                        if (key == KEY_LAST_SYNC_TIME) {
+                            editor.putLong(key, value.toLong())
+                        } else if (key.startsWith(KEY_SCORE_PREFIX)) {
+                            editor.putInt(key, value.toInt())
+                        } else {
+                            editor.putLong(key, value.toLong())
+                        }
+                    }
+                }
+            }
+            editor.apply()
+            true
+        } catch (e: Exception) {
+            AppLogger.log(context, "PreferenceHelper", "importPreferences failed", e)
+            false
+        }
     }
 }

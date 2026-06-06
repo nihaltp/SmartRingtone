@@ -133,4 +133,38 @@ class RingtoneRestoreTest {
         // Verify that it returned early and did not attempt to fetch original ringtone or set updates
         Mockito.verify(mockPrefs, Mockito.never()).getString(Mockito.startsWith("orig_rt_"), anyOrNull())
     }
+
+    @Test
+    fun testExportPreferencesExcludesBackupFileUri() {
+        val testPrefs =
+            mapOf(
+                "app_theme" to "dark",
+                "backup_file_uri" to "content://some/backup/file.json",
+                "score_contact_1" to 5,
+            )
+        Mockito.`when`(mockPrefs.all).thenReturn(testPrefs)
+
+        val exportedJson = PreferenceHelper.exportPreferences(mockContext)
+        org.junit.Assert.assertTrue(exportedJson.contains("dark"))
+        org.junit.Assert.assertTrue(exportedJson.contains("score_contact_1"))
+        org.junit.Assert.assertFalse(exportedJson.contains("backup_file_uri"))
+    }
+
+    @Test
+    fun testImportPreferencesRestoresValuesAndPreservesBackupFileUri() {
+        val importedJson = """{"app_theme":"light","score_contact_1":3,"app_paused":true}"""
+
+        Mockito.`when`(mockPrefs.getString("backup_file_uri", null)).thenReturn("content://saved/uri")
+        Mockito.`when`(mockPrefs.all).thenReturn(emptyMap())
+
+        val success = PreferenceHelper.importPreferences(mockContext, importedJson)
+
+        org.junit.Assert.assertTrue(success)
+        Mockito.verify(mockEditor).clear()
+        Mockito.verify(mockEditor).putString("backup_file_uri", "content://saved/uri")
+        Mockito.verify(mockEditor).putString("app_theme", "light")
+        Mockito.verify(mockEditor).putInt("score_contact_1", 3)
+        Mockito.verify(mockEditor).putBoolean("app_paused", true)
+        Mockito.verify(mockEditor, Mockito.atLeastOnce()).apply()
+    }
 }

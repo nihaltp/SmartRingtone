@@ -22,7 +22,7 @@ object NotificationHelper {
                     enableVibration(false)
                     enableLights(false)
                 }
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -32,7 +32,7 @@ object NotificationHelper {
         progress: Int,
         total: Int,
     ) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         createNotificationChannel(context)
 
         val percentage = if (total > 0) (progress * 100) / total else 0
@@ -52,7 +52,7 @@ object NotificationHelper {
     }
 
     fun dismissNotification(context: Context) {
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         notificationManager.cancel(NOTIFICATION_ID)
     }
 }

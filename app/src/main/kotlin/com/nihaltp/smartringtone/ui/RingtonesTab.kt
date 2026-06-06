@@ -3,6 +3,7 @@ package com.nihaltp.smartringtone.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -27,11 +28,13 @@ import com.nihaltp.smartringtone.data.Ringtone
 @Composable
 fun RingtonesTab(
     ringtones: List<Ringtone>,
+    unavailableRingtones: Map<Int, Boolean>,
     playingUri: String?,
     onAdd: () -> Unit,
     onDelete: (Int) -> Unit,
     onMove: (Int, Boolean) -> Unit,
     onTogglePlay: (String) -> Unit,
+    onReplace: (Int) -> Unit,
 ) {
     var ringtoneToDelete by remember { mutableStateOf<Ringtone?>(null) }
 
@@ -68,6 +71,53 @@ fun RingtonesTab(
             },
             dismissButton = {
                 TextButton(onClick = { ringtoneToDelete = null }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    var ringtoneToReplace by remember { mutableStateOf<Ringtone?>(null) }
+
+    if (ringtoneToReplace != null) {
+        val ringtone = ringtoneToReplace!!
+        AlertDialog(
+            onDismissRequest = { ringtoneToReplace = null },
+            title = {
+                Text(
+                    text = stringResource(R.string.ringtone_unavailable_title),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.ringtone_unavailable_desc, ringtone.name),
+                    fontSize = 14.sp,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onReplace(ringtone.id)
+                        ringtoneToReplace = null
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.pick_file_btn),
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { ringtoneToReplace = null }) {
                     Text(
                         text = stringResource(R.string.cancel),
                         color = TextSecondary,
@@ -141,6 +191,8 @@ fun RingtonesTab(
                         isPlaying = playingUri == ringtone.uri,
                         isFirst = index == 0,
                         isLast = index == ringtones.size - 1,
+                        isUnavailable = unavailableRingtones[ringtone.id] ?: false,
+                        onShowUnavailableDialog = { ringtoneToReplace = ringtone },
                         onDelete = { ringtoneToDelete = ringtone },
                         onMove = { up -> onMove(index, up) },
                         onTogglePlay = { onTogglePlay(ringtone.uri) },
@@ -158,6 +210,8 @@ fun RingtoneCard(
     isPlaying: Boolean,
     isFirst: Boolean,
     isLast: Boolean,
+    isUnavailable: Boolean,
+    onShowUnavailableDialog: () -> Unit,
     onDelete: () -> Unit,
     onMove: (Boolean) -> Unit,
     onTogglePlay: () -> Unit,
@@ -204,14 +258,29 @@ fun RingtoneCard(
 
             // Details
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = ringtone.name,
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = ringtone.name,
+                        color = TextPrimary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (isUnavailable) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Default.BugReport,
+                            contentDescription = "Ringtone Unavailable",
+                            tint = Color.Red,
+                            modifier =
+                                Modifier
+                                    .size(18.dp)
+                                    .clickable { onShowUnavailableDialog() },
+                        )
+                    }
+                }
                 Text(
                     text = stringResource(R.string.plays_on_score, index + 1),
                     color = TextSecondary,

@@ -2,6 +2,7 @@ package com.nihaltp.smartringtone.ui
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -55,6 +56,15 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _isAppPaused = MutableStateFlow(false)
     val isAppPaused: StateFlow<Boolean> = _isAppPaused
 
+    private val _backupFileUri = MutableStateFlow<String?>(null)
+    val backupFileUri: StateFlow<String?> = _backupFileUri
+
+    private val _backupFileName = MutableStateFlow<String?>(null)
+    val backupFileName: StateFlow<String?> = _backupFileName
+
+    private val _unavailableRingtones = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
+    val unavailableRingtones: StateFlow<Map<Int, Boolean>> = _unavailableRingtones
+
     private var mediaPlayer: MediaPlayer? = null
     private var currentRingtone: android.media.Ringtone? = null
 
@@ -64,6 +74,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
         _isAppPaused.value = PreferenceHelper.isAppPaused(context)
+        val savedBackupUri = PreferenceHelper.getBackupFileUri(context)
+        _backupFileUri.value = savedBackupUri
+        _backupFileName.value = savedBackupUri?.let { getUriDisplayName(context, Uri.parse(it)) }
         loadData()
     }
 
@@ -107,6 +120,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                         _ringtones.value = loadedRingtones
                         _contacts.value = loadedContacts
                         _callLogs.value = loadedCallLogs
+
+                        val unavailMap = loadedRingtones.associate { it.id to !ContactHelper.isUriReadable(context, it.uri) }
+                        _unavailableRingtones.value = unavailMap
                     }
                     AppLogger.log(
                         context,
@@ -136,8 +152,13 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                         CallSyncHelper.syncCallLogs(context)
                         val loadedContacts = ContactHelper.getContacts(context)
                         val loadedCallLogs = PreferenceHelper.getCallLogsHistory(context)
+                        val loadedRingtones = PreferenceHelper.getRingtones(context)
+                        val unavailMap = loadedRingtones.associate { it.id to !ContactHelper.isUriReadable(context, it.uri) }
+
                         _contacts.value = loadedContacts
                         _callLogs.value = loadedCallLogs
+                        _ringtones.value = loadedRingtones
+                        _unavailableRingtones.value = unavailMap
                     }
                     AppLogger.log(context, "ViewModel", "syncCallLogs() completed successfully")
                 } catch (e: Exception) {
@@ -537,5 +558,213 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         mediaPlayer?.release()
         currentRingtone?.stop()
         AppLogger.log(context, "ViewModel", "onCleared() - MediaPlayer and Ringtone released")
+    }
+
+    private fun getUriDisplayName(
+        context: Context,
+        uri: Uri,
+    ): String? {
+        if (uri.scheme == "content") {
+            try {
+                context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (nameIndex >= 0) {
+                            return cursor.getString(nameIndex)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "Error getting display name for URI: $uri", e)
+            }
+        }
+        return uri.path?.substringAfterLast('/')
+    }
+
+    fun setBackupFileUri(uri: Uri?) {
+        viewModelScope.launch {
+            if (uri != null) {
+                try {
+                    val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    context.contentResolver.takePersistableUriPermission(uri, takeFlags)
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "Failed to take persistable URI permission", e)
+                }
+                val uriStr = uri.toString()
+                PreferenceHelper.setBackupFileUri(context, uriStr)
+                _backupFileUri.value = uriStr
+                _backupFileName.value = getUriDisplayName(context, uri)
+            } else {
+                PreferenceHelper.setBackupFileUri(context, null)
+                _backupFileUri.value = null
+                _backupFileName.value = null
+            }
+        }
+    }
+
+    fun clearBackupFileUri() {
+        setBackupFileUri(null)
+    }
+
+    fun exportData(
+        uri: Uri,
+        onComplete: (Boolean) -> Unit = {},
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            var success = false
+            try {
+                val json =
+                    withContext(Dispatchers.IO) {
+                        PreferenceHelper.exportPreferences(context)
+                    }
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                        outputStream.write(json.toByteArray())
+                    }
+                }
+                setBackupFileUri(uri)
+                AppLogger.log(context, "ViewModel", "Exported settings to URI: $uri")
+                success = true
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "Failed to export settings", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+                onComplete(success)
+            }
+        }
+    }
+
+    fun exportDataDirect(onComplete: (Boolean) -> Unit = {}) {
+        val uriStr = _backupFileUri.value
+        if (uriStr != null) {
+            exportData(Uri.parse(uriStr), onComplete)
+        } else {
+            onComplete(false)
+        }
+    }
+
+    fun importData(
+        uri: Uri,
+        onComplete: (Boolean) -> Unit = {},
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            var success = false
+            try {
+                val json =
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                            inputStream.bufferedReader().use { it.readText() }
+                        }
+                    } ?: throw Exception("Failed to read import file")
+
+                val importSuccess =
+                    withContext(Dispatchers.IO) {
+                        PreferenceHelper.importPreferences(context, json)
+                    }
+
+                if (importSuccess) {
+                    setBackupFileUri(uri)
+
+                    _theme.value = PreferenceHelper.getTheme(context)
+                    _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
+                    _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
+                    _isAppPaused.value = PreferenceHelper.isAppPaused(context)
+                    _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
+
+                    withContext(Dispatchers.IO) {
+                        if (!PreferenceHelper.isAppPaused(context)) {
+                            val contactsList = ContactHelper.getContacts(context)
+                            val ringtonesList = PreferenceHelper.getRingtones(context)
+                            ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, ringtonesList)
+                        }
+                    }
+
+                    loadData()
+                    AppLogger.log(context, "ViewModel", "Imported settings successfully from URI: $uri")
+                    success = true
+                } else {
+                    throw Exception("Invalid backup file format")
+                }
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "Failed to import settings", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+                onComplete(success)
+            }
+        }
+    }
+
+    fun importDataDirect(onComplete: (Boolean) -> Unit = {}) {
+        val uriStr = _backupFileUri.value
+        if (uriStr != null) {
+            importData(Uri.parse(uriStr), onComplete)
+        } else {
+            onComplete(false)
+        }
+    }
+
+    private var ringtoneIdToReplace: Int? = null
+
+    fun setRingtoneIdToReplace(id: Int?) {
+        ringtoneIdToReplace = id
+    }
+
+    fun getRingtoneIdToReplace(): Int? = ringtoneIdToReplace
+
+    fun replaceRingtone(
+        id: Int,
+        uri: Uri,
+    ) {
+        viewModelScope.launch {
+            stateMutex.withLock {
+                _isLoading.value = true
+                try {
+                    val persisted =
+                        withContext(Dispatchers.IO) {
+                            RingtoneHelper.persistRingtone(context, uri)
+                        }
+                    if (persisted != null) {
+                        val currentList =
+                            withContext(Dispatchers.IO) {
+                                val list = PreferenceHelper.getRingtones(context).toMutableList()
+                                val index = list.indexOfFirst { it.id == id }
+                                if (index != -1) {
+                                    list[index] = list[index].copy(name = persisted.first, uri = persisted.second)
+                                    PreferenceHelper.saveRingtones(context, list)
+                                }
+                                list
+                            }
+                        _ringtones.value = currentList
+
+                        val unavailMap = currentList.associate { it.id to !ContactHelper.isUriReadable(context, it.uri) }
+                        _unavailableRingtones.value = unavailMap
+
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                val contactsList = ContactHelper.getContacts(context)
+                                ContactHelper.updateContactsRingtonesBasedOnScores(context, contactsList, currentList)
+                                val loadedContacts = ContactHelper.getContacts(context)
+                                _contacts.value = loadedContacts
+                                AppLogger.log(context, "ViewModel", "Background contacts ringtones sync completed after replacement")
+                            } catch (bgEx: Exception) {
+                                AppLogger.log(context, "ViewModel", "Background contacts ringtones sync after replacement failed", bgEx)
+                            }
+                        }
+                    } else {
+                        AppLogger.log(context, "ViewModel", "replaceRingtone() failed to resolve ringtone from URI")
+                        _error.value = Exception("Failed to resolve audio file from URI: $uri")
+                    }
+                } catch (e: Exception) {
+                    AppLogger.log(context, "ViewModel", "replaceRingtone() failed", e)
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
+                }
+            }
+        }
     }
 }

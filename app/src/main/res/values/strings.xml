@@ -112,4 +112,21 @@
     <string name="settings_pause">Pause Ringtone Customization</string>
     <string name="enable_pause">Pause Service</string>
     <string name="enable_pause_desc">Temporarily pause custom ringtone changes. When enabled, all contact ringtones are restored to their default/original settings. Note: Use this setting before uninstalling this app to ensure all ringtones are successfully reverted.</string>
+
+    <!-- Backup & Restore Settings -->
+    <string name="settings_backup_restore">Backup &amp; Restore</string>
+    <string name="settings_backup_restore_desc">Export or import your configurations (contact scores, ringtone mappings, app settings) to a file. Once a file is set, backup and restore are done automatically with a single tap.</string>
+    <string name="export_data_btn">Export</string>
+    <string name="import_data_btn">Import</string>
+    <string name="export_success">Data exported successfully</string>
+    <string name="import_success">Data imported successfully</string>
+    <string name="export_failed">Failed to export data</string>
+    <string name="import_failed">Failed to import data</string>
+    <string name="backup_file_label">Backup File</string>
+    <string name="backup_file_not_set">No file selected (will prompt on next use)</string>
+
+    <!-- Ringtone replacement -->
+    <string name="ringtone_unavailable_title">Ringtone Unavailable</string>
+    <string name="ringtone_unavailable_desc">The audio file for \"%1$s\" is not available on this device. Would you like to select a new file to replace it?</string>
+    <string name="pick_file_btn">Pick File</string>
 </resources>

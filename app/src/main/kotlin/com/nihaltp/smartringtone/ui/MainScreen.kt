@@ -143,6 +143,7 @@ fun MainScreen(
     val playingUri by viewModel.playingUri.collectAsState()
     val error by viewModel.error.collectAsState()
     val isLoggingEnabled by viewModel.isLoggingEnabled.collectAsState()
+    val unavailableRingtones by viewModel.unavailableRingtones.collectAsState()
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -163,7 +164,15 @@ fun MainScreen(
             contract = ActivityResultContracts.GetContent(),
         ) { uri: Uri? ->
             if (uri != null) {
-                viewModel.addRingtone(uri)
+                val replaceId = viewModel.getRingtoneIdToReplace()
+                if (replaceId != null) {
+                    viewModel.replaceRingtone(replaceId, uri)
+                    viewModel.setRingtoneIdToReplace(null)
+                } else {
+                    viewModel.addRingtone(uri)
+                }
+            } else {
+                viewModel.setRingtoneIdToReplace(null)
             }
         }
 
@@ -242,11 +251,16 @@ fun MainScreen(
                         AppTab.RINGTONES ->
                             RingtonesTab(
                                 ringtones = ringtones,
+                                unavailableRingtones = unavailableRingtones,
                                 playingUri = playingUri,
                                 onAdd = { audioPickerLauncher.launch("audio/*") },
                                 onDelete = { id -> viewModel.deleteRingtone(id) },
                                 onMove = { index, up -> viewModel.moveRingtone(index, up) },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },
+                                onReplace = { id ->
+                                    viewModel.setRingtoneIdToReplace(id)
+                                    audioPickerLauncher.launch("audio/*")
+                                },
                             )
                         AppTab.CONTACTS ->
                             ContactsTab(

@@ -42,6 +42,43 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     val logsText by viewModel.logsText.collectAsState()
     val isAppPaused by viewModel.isAppPaused.collectAsState()
 
+    val backupFileUri by viewModel.backupFileUri.collectAsState()
+    val backupFileName by viewModel.backupFileName.collectAsState()
+
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/json"),
+        ) { uri: Uri? ->
+            if (uri != null) {
+                viewModel.exportData(uri) { success ->
+                    val msg =
+                        if (success) {
+                            context.getString(R.string.export_success)
+                        } else {
+                            context.getString(R.string.export_failed)
+                        }
+                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+    val importLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument(),
+        ) { uri: Uri? ->
+            if (uri != null) {
+                viewModel.importData(uri) { success ->
+                    val msg =
+                        if (success) {
+                            context.getString(R.string.import_success)
+                        } else {
+                            context.getString(R.string.import_failed)
+                        }
+                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showLogsViewer by remember { mutableStateOf(false) }
 
@@ -244,6 +281,144 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(stringResource(R.string.clear_fallback_ringtone_btn), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
+                    }
+                }
+            }
+        }
+
+        // Backup & Restore Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.settings_backup_restore),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.settings_backup_restore_desc),
+                    fontSize = 11.sp,
+                    color = TextSecondary,
+                    lineHeight = 16.sp,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(BackgroundColor, shape = RoundedCornerShape(4.dp))
+                            .border(BorderStroke(1.dp, BorderColor), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Column(
+                            modifier =
+                                Modifier.weight(1f).clickable {
+                                    importLauncher.launch(arrayOf("application/json"))
+                                },
+                        ) {
+                            Text(
+                                text = stringResource(R.string.backup_file_label).uppercase(),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextSecondary,
+                                fontFamily = FontFamily.Monospace,
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = backupFileName ?: stringResource(R.string.backup_file_not_set),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (backupFileName != null) TextPrimary else TextSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (backupFileUri != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { viewModel.clearBackupFileUri() },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear backup file path",
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Button(
+                        onClick = {
+                            if (backupFileUri != null) {
+                                viewModel.exportDataDirect { success ->
+                                    val msg =
+                                        if (success) {
+                                            context.getString(R.string.export_success)
+                                        } else {
+                                            context.getString(R.string.export_failed)
+                                        }
+                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                exportLauncher.launch("smartringtone_backup.json")
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Default.Backup, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.export_data_btn), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            if (backupFileUri != null) {
+                                viewModel.importDataDirect { success ->
+                                    val msg =
+                                        if (success) {
+                                            context.getString(R.string.import_success)
+                                        } else {
+                                            context.getString(R.string.import_failed)
+                                        }
+                                    android.widget.Toast.makeText(context, msg, android.widget.Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                importLauncher.launch(arrayOf("application/json"))
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentColor),
+                        shape = RoundedCornerShape(4.dp),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.import_data_btn), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
