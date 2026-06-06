@@ -414,5 +414,8 @@ platform :android do
       puts "Restoring original DND zen_mode state to: #{original_zen_mode}..."
       sh("adb -s #{device_id} shell settings put global zen_mode #{original_zen_mode}") rescue nil
     end
+
+    # Uninstall the app after screenshots are captured
+    sh("adb -s #{device_id} uninstall com.nihaltp.smartringtone.debug.test") rescue nil
   end
 end
