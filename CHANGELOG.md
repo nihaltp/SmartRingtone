@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-06-06
+
+### Added
+
+- b91578c  feat: enable/disable call log tab without enabling logging
+- f8178e6  feat: allow custom score additions
+- 514879e  feat: add rescan option for contacts
+- 46d3baa  feat: add rescan call logs function
+- 2a15ba1  feat: add notification for call log sync
+- af66e86  feat: seprate file for debug settings export/import
+- d514e05  feat: add download source to settings and issue reports
+
+### Style
+
+- 466c308  style: show header panel only on ringtones tab
+
+### Refactor
+
+- 8a197f7  refactor: change log process direction to make it faster
+
+### Documentation
+
+- 2d0d736  docs: update README.md
+
+### Maintenance
+
+- ef37ed6  chore: updates for screenshot taking
+
 ## [1.2.0] - 2026-06-06
 
 ### Added
