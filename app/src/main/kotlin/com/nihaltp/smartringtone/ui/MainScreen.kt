@@ -142,7 +142,7 @@ fun MainScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val playingUri by viewModel.playingUri.collectAsState()
     val error by viewModel.error.collectAsState()
-    val isLoggingEnabled by viewModel.isLoggingEnabled.collectAsState()
+    val isLogTabEnabled by viewModel.isLogTabEnabled.collectAsState()
     val unavailableRingtones by viewModel.unavailableRingtones.collectAsState()
 
     val context = LocalContext.current
@@ -153,8 +153,8 @@ fun MainScreen(
     var selectedTab by remember { mutableStateOf(AppTab.RINGTONES) }
     var searchQuery by remember { mutableStateOf("") }
 
-    LaunchedEffect(isLoggingEnabled) {
-        if (!isLoggingEnabled && selectedTab == AppTab.LOG) {
+    LaunchedEffect(isLogTabEnabled) {
+        if (!isLogTabEnabled && selectedTab == AppTab.LOG) {
             selectedTab = AppTab.RINGTONES
         }
     }
@@ -206,7 +206,7 @@ fun MainScreen(
                     label = { Text(stringResource(R.string.tab_contacts)) },
                     colors = tabColors,
                 )
-                if (isLoggingEnabled) {
+                if (isLogTabEnabled) {
                     NavigationBarItem(
                         selected = selectedTab == AppTab.LOG,
                         onClick = { selectedTab = AppTab.LOG },

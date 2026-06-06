@@ -40,6 +40,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     val clipboardManager = LocalClipboardManager.current
 
     val isLoggingEnabled by viewModel.isLoggingEnabled.collectAsState()
+    val isLogTabEnabled by viewModel.isLogTabEnabled.collectAsState()
     val logsText by viewModel.logsText.collectAsState()
     val isAppPaused by viewModel.isAppPaused.collectAsState()
 
@@ -488,6 +489,44 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                     fontFamily = FontFamily.Monospace,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setLogTabEnabled(!isLogTabEnabled) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.enable_log_tab),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                        )
+                        Text(
+                            text = stringResource(R.string.enable_log_tab_desc),
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            lineHeight = 16.sp,
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Switch(
+                        checked = isLogTabEnabled,
+                        onCheckedChange = { viewModel.setLogTabEnabled(it) },
+                        colors =
+                            SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = AccentColor,
+                                uncheckedThumbColor = TextSecondary,
+                                uncheckedTrackColor = BorderColor,
+                            ),
+                    )
+                }
+
+                Divider(color = BorderColor, modifier = Modifier.padding(vertical = 12.dp))
+
                 Row(
                     modifier =
                         Modifier

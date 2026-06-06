@@ -42,6 +42,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _isLoggingEnabled = MutableStateFlow(false)
     val isLoggingEnabled: StateFlow<Boolean> = _isLoggingEnabled
 
+    private val _isLogTabEnabled = MutableStateFlow(true)
+    val isLogTabEnabled: StateFlow<Boolean> = _isLogTabEnabled
+
     private val _logsText = MutableStateFlow("")
     val logsText: StateFlow<String> = _logsText
 
@@ -77,6 +80,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
 
     init {
         _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
+        _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
         _theme.value = PreferenceHelper.getTheme(context)
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
@@ -103,7 +107,16 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         AppLogger.setLoggingEnabled(context, enabled)
         _isLoggingEnabled.value = enabled
         AppLogger.log(context, "ViewModel", "Logging state changed to: $enabled")
+        if (enabled) {
+            setLogTabEnabled(true)
+        }
         loadLogs()
+    }
+
+    fun setLogTabEnabled(enabled: Boolean) {
+        PreferenceHelper.setLogTabEnabled(context, enabled)
+        _isLogTabEnabled.value = enabled
+        AppLogger.log(context, "ViewModel", "Log tab enabled state changed to: $enabled")
     }
 
     fun loadLogs() {
@@ -860,6 +873,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
                     _isAppPaused.value = PreferenceHelper.isAppPaused(context)
                     _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
+                    _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
 
                     withContext(Dispatchers.IO) {
                         if (!PreferenceHelper.isAppPaused(context)) {

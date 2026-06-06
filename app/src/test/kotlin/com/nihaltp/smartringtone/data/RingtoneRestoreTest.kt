@@ -52,6 +52,7 @@ class RingtoneRestoreTest {
         Mockito.`when`(mockEditor.putInt(any(), any())).thenReturn(mockEditor)
         Mockito.`when`(mockEditor.putLong(any(), any())).thenReturn(mockEditor)
         Mockito.`when`(mockEditor.putString(any(), any())).thenReturn(mockEditor)
+        Mockito.`when`(mockEditor.putBoolean(any(), any())).thenReturn(mockEditor)
         Mockito.`when`(mockEditor.remove(any())).thenReturn(mockEditor)
     }
 
@@ -200,5 +201,16 @@ class RingtoneRestoreTest {
         val allBlankRingtones = listOf(ringtoneBlank, ringtoneBlank2)
         assertEquals(null, ContactHelper.getResolvedRingtoneForScore(1, allBlankRingtones))
         assertEquals(null, ContactHelper.getResolvedRingtoneForScore(2, allBlankRingtones))
+    }
+
+    @Test
+    fun testLogTabEnabledPreferences() {
+        Mockito.`when`(mockPrefs.getBoolean(org.mockito.kotlin.eq("log_tab_enabled"), org.mockito.kotlin.eq(true))).thenReturn(true)
+        val defaultVal = PreferenceHelper.isLogTabEnabled(mockContext)
+        assertEquals(true, defaultVal)
+
+        PreferenceHelper.setLogTabEnabled(mockContext, false)
+        Mockito.verify(mockEditor).putBoolean(org.mockito.kotlin.eq("log_tab_enabled"), org.mockito.kotlin.eq(false))
+        Mockito.verify(mockEditor).apply()
     }
 }

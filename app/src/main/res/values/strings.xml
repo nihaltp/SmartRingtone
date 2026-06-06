@@ -9,7 +9,7 @@
 
     <string name="tab_ringtones">Ringtones</string>
     <string name="tab_contacts">Contacts</string>
-    <string name="tab_log">Log</string>
+    <string name="tab_log">Call Log</string>
 
     <string name="ringtone_sequence">Ringtone Sequence</string>
     <string name="add">Add</string>
@@ -82,6 +82,8 @@
     <string name="settings_app_info">App Info</string>
     <string name="settings_links">GitHub &amp; Community</string>
     <string name="settings_logging">Logging &amp; Diagnostics</string>
+    <string name="enable_log_tab">Enable Log Tab</string>
+    <string name="enable_log_tab_desc">Show the Log tab in the navigation bar to view call history logs.</string>
     <string name="enable_logging">Enable Logging</string>
     <string name="enable_logging_desc">Record app activity and error traces locally to help diagnose issues.</string>
     <string name="view_logs">View Logs</string>

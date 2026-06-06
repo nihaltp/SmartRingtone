@@ -17,6 +17,7 @@ object PreferenceHelper {
     private const val KEY_BACKUP_FILE_URI = "backup_file_uri"
     private const val KEY_SCORE_ADDITION_MISSED = "score_addition_missed"
     private const val KEY_SCORE_ADDITION_REJECTED = "score_addition_rejected"
+    private const val KEY_LOG_TAB_ENABLED = "log_tab_enabled"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -279,6 +280,19 @@ object PreferenceHelper {
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_APP_PAUSED, paused).apply()
+    }
+
+    fun isLogTabEnabled(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_LOG_TAB_ENABLED, true)
+    }
+
+    fun setLogTabEnabled(
+        context: Context,
+        enabled: Boolean,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(KEY_LOG_TAB_ENABLED, enabled).apply()
     }
 
     fun getBackupFileUri(context: Context): String? {
