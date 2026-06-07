@@ -1,6 +1,4 @@
 Smart Ringtone v1.5.0 (2026-06-07)
 
 Commits included in this release:
-- 4f1e591  feat: scan the blocked contact upon unblock
-- b690527  feat: sort blocklist to show blocked contacts first
-- 0c9a619  feat: add blocklist for avoiding ringtone change for specific contacts
+
