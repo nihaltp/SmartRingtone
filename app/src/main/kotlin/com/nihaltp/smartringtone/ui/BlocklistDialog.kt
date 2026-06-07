@@ -36,10 +36,14 @@ fun BlocklistDialog(
 
     var searchQuery by remember { mutableStateOf("") }
 
-    val filteredContacts = remember(contacts, searchQuery) {
-        ContactSearchHelper.filterContacts(contacts, searchQuery)
-            .sortedBy { it.name.lowercase() }
-    }
+    val filteredContacts =
+        remember(contacts, blockedContacts, searchQuery) {
+            ContactSearchHelper.filterContacts(contacts, searchQuery)
+                .sortedWith(
+                    compareByDescending<Contact> { blockedContacts.contains(it.id) }
+                        .thenBy { it.name.lowercase() },
+                )
+        }
 
     Dialog(
         onDismissRequest = onDismiss,
