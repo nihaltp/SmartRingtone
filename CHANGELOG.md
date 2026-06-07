@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-06-07
+
+### Added
+
+- 4f1e591  feat: scan the blocked contact upon unblock
+- b690527  feat: sort blocklist to show blocked contacts first
+- 0c9a619  feat: add blocklist for avoiding ringtone change for specific contacts
+
 ## [1.4.0] - 2026-06-06
 
 ### Added
