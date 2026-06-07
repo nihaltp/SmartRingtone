@@ -54,6 +54,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _useDynamicColor = MutableStateFlow(true)
     val useDynamicColor: StateFlow<Boolean> = _useDynamicColor
 
+    private val _blockedContacts = MutableStateFlow<Set<String>>(emptySet())
+    val blockedContacts: StateFlow<Set<String>> = _blockedContacts
+
     private val _fallbackRingtoneUri = MutableStateFlow<String?>(null)
     val fallbackRingtoneUri: StateFlow<String?> = _fallbackRingtoneUri
 
@@ -86,6 +89,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
         _theme.value = PreferenceHelper.getTheme(context)
         _useDynamicColor.value = PreferenceHelper.isDynamicColorEnabled(context)
+        _blockedContacts.value = PreferenceHelper.getBlockedContacts(context)
         _fallbackRingtoneUri.value = PreferenceHelper.getFallbackRingtoneUri(context)
         _fallbackRingtoneName.value = PreferenceHelper.getFallbackRingtoneName(context)
         _isAppPaused.value = PreferenceHelper.isAppPaused(context)
@@ -127,6 +131,25 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         PreferenceHelper.setDynamicColorEnabled(context, enabled)
         _useDynamicColor.value = enabled
         AppLogger.log(context, "ViewModel", "Dynamic color state changed to: $enabled")
+    }
+
+    fun toggleContactBlock(contactId: String) {
+        viewModelScope.launch {
+            val currentBlocked = _blockedContacts.value.toMutableSet()
+            val isBlocking = !currentBlocked.contains(contactId)
+            if (isBlocking) {
+                currentBlocked.add(contactId)
+                // Reset their score to 0 and restore ringtone immediately
+                resetContactScore(contactId)
+            } else {
+                currentBlocked.remove(contactId)
+            }
+            withContext(Dispatchers.IO) {
+                PreferenceHelper.setBlockedContacts(context, currentBlocked)
+            }
+            _blockedContacts.value = currentBlocked
+            AppLogger.log(context, "ViewModel", "Contact block status changed: id=$contactId, blocked=$isBlocking")
+        }
     }
 
     fun loadLogs() {
@@ -885,6 +908,7 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                     _isLoggingEnabled.value = AppLogger.isLoggingEnabled(context)
                     _isLogTabEnabled.value = PreferenceHelper.isLogTabEnabled(context)
                     _useDynamicColor.value = PreferenceHelper.isDynamicColorEnabled(context)
+                    _blockedContacts.value = PreferenceHelper.getBlockedContacts(context)
 
                     withContext(Dispatchers.IO) {
                         if (!PreferenceHelper.isAppPaused(context)) {

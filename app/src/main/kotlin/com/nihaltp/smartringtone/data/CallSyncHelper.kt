@@ -104,6 +104,12 @@ object CallSyncHelper {
                             continue
                         }
 
+                        // Skip if contact is blocked from scoring
+                        if (PreferenceHelper.isContactBlocked(context, contactId)) {
+                            Log.d("CallSyncHelper", "Contact $contactId is blocked, skipping call log sync.")
+                            continue
+                        }
+
                         // Early exit if this contact has already encountered a reset call
                         if (resetContacts.contains(contactId)) {
                             continue
@@ -280,6 +286,10 @@ object CallSyncHelper {
     ) {
         synchronized(syncLock) {
             if (PreferenceHelper.isScreenshotMode(context)) return
+            if (PreferenceHelper.isContactBlocked(context, targetContactId)) {
+                Log.d("CallSyncHelper", "Contact $targetContactId is blocked, skipping syncContactCallLogs.")
+                return
+            }
             AppLogger.log(context, "CallSyncHelper", "syncContactCallLogs starting for contactId=$targetContactId")
 
             // 1. Reset target contact score to 0 in memory and in system
@@ -454,6 +464,10 @@ object CallSyncHelper {
         synchronized(syncLock) {
             AppLogger.log(context, "CallSyncHelper", "processCall: number=$number, type=$type, duration=$duration, date=$date")
             val contactId = ContactHelper.getContactIdFromNumber(context, number) ?: return
+            if (PreferenceHelper.isContactBlocked(context, contactId)) {
+                Log.d("CallSyncHelper", "Contact $contactId is blocked, skipping processCall.")
+                return
+            }
             val contactName = ContactHelper.getContactName(context, contactId)
 
             val currentScore = PreferenceHelper.getContactScore(context, contactId)

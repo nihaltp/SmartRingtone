@@ -43,6 +43,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     val isLogTabEnabled by viewModel.isLogTabEnabled.collectAsState()
     val logsText by viewModel.logsText.collectAsState()
     val isAppPaused by viewModel.isAppPaused.collectAsState()
+    val blockedContacts by viewModel.blockedContacts.collectAsState()
 
     val backupFileUri by viewModel.backupFileUri.collectAsState()
     val backupFileName by viewModel.backupFileName.collectAsState()
@@ -83,6 +84,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
 
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showLogsViewer by remember { mutableStateOf(false) }
+    var showBlocklistDialog by remember { mutableStateOf(false) }
 
     val versionName = remember { GitHubIssueHelper.getAppVersionName(context) }
     val versionCode = remember { GitHubIssueHelper.getAppVersionCode(context) }
@@ -91,6 +93,13 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
 
     if (showLicensesDialog) {
         LicensesDialog(onDismiss = { showLicensesDialog = false })
+    }
+
+    if (showBlocklistDialog) {
+        BlocklistDialog(
+            viewModel = viewModel,
+            onDismiss = { showBlocklistDialog = false },
+        )
     }
 
     if (showLogsViewer) {
@@ -383,6 +392,53 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                         }
                     }
                 }
+            }
+        }
+
+        // Blocked Contacts (Blocklist) Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { showBlocklistDialog = true }
+                        .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Block,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.blocklist_title),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                        )
+                        Text(
+                            text = stringResource(R.string.blocklist_desc, blockedContacts.size),
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp),
+                )
             }
         }
 

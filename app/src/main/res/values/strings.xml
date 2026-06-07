@@ -164,4 +164,10 @@
     <string name="settings_score_additions_desc">Configure how many points are added to a contact\'s score when a call is missed or rejected.</string>
     <string name="score_addition_missed_calls">Missed calls</string>
     <string name="score_addition_rejected_calls">Rejected calls</string>
+
+    <!-- Blocklist Settings -->
+    <string name="blocklist_title">Blocked Contacts</string>
+    <string name="blocklist_desc">%1$d contact(s) blocked from scoring</string>
+    <string name="blocklist_search_placeholder">Search contacts to block/unblock…</string>
+    <string name="blocklist_dialog_title">Blocked Contacts</string>
 </resources>

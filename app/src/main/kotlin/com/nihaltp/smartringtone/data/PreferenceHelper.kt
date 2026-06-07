@@ -19,6 +19,7 @@ object PreferenceHelper {
     private const val KEY_SCORE_ADDITION_REJECTED = "score_addition_rejected"
     private const val KEY_LOG_TAB_ENABLED = "log_tab_enabled"
     private const val KEY_DYNAMIC_COLOR_ENABLED = "dynamic_color_enabled"
+    private const val KEY_BLOCKED_CONTACTS = "blocked_contacts"
     const val ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER = "__DEFAULT__"
 
     private val gson = Gson()
@@ -310,6 +311,26 @@ object PreferenceHelper {
         prefs.edit().putBoolean(KEY_DYNAMIC_COLOR_ENABLED, enabled).apply()
     }
 
+    fun getBlockedContacts(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_BLOCKED_CONTACTS, emptySet()) ?: emptySet()
+    }
+
+    fun setBlockedContacts(
+        context: Context,
+        blockedIds: Set<String>,
+    ) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_BLOCKED_CONTACTS, blockedIds).apply()
+    }
+
+    fun isContactBlocked(
+        context: Context,
+        contactId: String,
+    ): Boolean {
+        return getBlockedContacts(context).contains(contactId)
+    }
+
     fun getBackupFileUri(context: Context): String? {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getString(KEY_BACKUP_FILE_URI, null)
@@ -385,6 +406,10 @@ object PreferenceHelper {
                 when (value) {
                     is Boolean -> editor.putBoolean(key, value)
                     is String -> editor.putString(key, value)
+                    is List<*> -> {
+                        val set = value.mapNotNull { it?.toString() }.toSet()
+                        editor.putStringSet(key, set)
+                    }
                     is Number -> {
                         if (key == KEY_LAST_SYNC_TIME) {
                             editor.putLong(key, value.toLong())

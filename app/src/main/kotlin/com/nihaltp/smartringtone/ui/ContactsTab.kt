@@ -28,6 +28,7 @@ import com.nihaltp.smartringtone.data.*
 @Composable
 fun ContactsTab(
     contacts: List<Contact>,
+    blockedContacts: Set<String>,
     ringtones: List<Ringtone>,
     searchQuery: String,
     playingUri: String?,
@@ -41,8 +42,10 @@ fun ContactsTab(
     var sortAscending by rememberSaveable { mutableStateOf(false) }
 
     val sortedAndFilteredContacts =
-        remember(contacts, searchQuery, sortBy, sortAscending) {
-            val filtered = ContactSearchHelper.filterContacts(contacts, searchQuery)
+        remember(contacts, blockedContacts, searchQuery, sortBy, sortAscending) {
+            val filtered =
+                ContactSearchHelper.filterContacts(contacts, searchQuery)
+                    .filter { !blockedContacts.contains(it.id) }
             when (sortBy) {
                 ContactSortOrder.NAME -> {
                     if (sortAscending) {

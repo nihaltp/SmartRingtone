@@ -165,6 +165,7 @@ fun MainScreen(
     val error by viewModel.error.collectAsState()
     val isLogTabEnabled by viewModel.isLogTabEnabled.collectAsState()
     val unavailableRingtones by viewModel.unavailableRingtones.collectAsState()
+    val blockedContacts by viewModel.blockedContacts.collectAsState()
 
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -289,6 +290,7 @@ fun MainScreen(
                         AppTab.CONTACTS ->
                             ContactsTab(
                                 contacts = contacts,
+                                blockedContacts = blockedContacts,
                                 ringtones = ringtones,
                                 searchQuery = searchQuery,
                                 playingUri = playingUri,
