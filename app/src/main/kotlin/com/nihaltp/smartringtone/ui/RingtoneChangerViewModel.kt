@@ -141,14 +141,34 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 currentBlocked.add(contactId)
                 // Reset their score to 0 and restore ringtone immediately
                 resetContactScore(contactId)
+                withContext(Dispatchers.IO) {
+                    PreferenceHelper.setBlockedContacts(context, currentBlocked)
+                }
+                _blockedContacts.value = currentBlocked
+                AppLogger.log(context, "ViewModel", "Contact block status changed: id=$contactId, blocked=$isBlocking")
             } else {
                 currentBlocked.remove(contactId)
+                withContext(Dispatchers.IO) {
+                    PreferenceHelper.setBlockedContacts(context, currentBlocked)
+                }
+                _blockedContacts.value = currentBlocked
+                AppLogger.log(context, "ViewModel", "Contact block status changed: id=$contactId, blocked=$isBlocking")
+
+                // Rescan that specific contact since they are unblocked
+                _isLoading.value = true
+                try {
+                    withContext(Dispatchers.IO) {
+                        CallSyncHelper.runSynchronized {
+                            CallSyncHelper.syncContactCallLogs(context, contactId)
+                        }
+                    }
+                    loadData()
+                } catch (e: Exception) {
+                    _error.value = e
+                } finally {
+                    _isLoading.value = false
+                }
             }
-            withContext(Dispatchers.IO) {
-                PreferenceHelper.setBlockedContacts(context, currentBlocked)
-            }
-            _blockedContacts.value = currentBlocked
-            AppLogger.log(context, "ViewModel", "Contact block status changed: id=$contactId, blocked=$isBlocking")
         }
     }
 
