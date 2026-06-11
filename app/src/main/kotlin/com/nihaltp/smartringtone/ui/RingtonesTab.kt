@@ -130,6 +130,14 @@ fun RingtonesTab(
                 )
             },
             confirmButton = {
+                TextButton(onClick = { ringtoneToDelete = null }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            dismissButton = {
                 TextButton(
                     onClick = {
                         onDelete(ringtone.id)
@@ -140,14 +148,6 @@ fun RingtonesTab(
                         text = stringResource(R.string.delete_btn),
                         color = Color.Red,
                         fontWeight = FontWeight.Bold,
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { ringtoneToDelete = null }) {
-                    Text(
-                        text = stringResource(R.string.cancel),
-                        color = TextSecondary,
                     )
                 }
             },
