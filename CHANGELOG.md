@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.1] - 2026-06-11
+
+### Added
+
+- 0c9a619  feat: add blocklist for avoiding ringtone change for specific contacts
+- b690527  feat: sort blocklist to show blocked contacts first
+- 4f1e591  feat: scan the blocked contact upon unblock
+
+### Style
+
+- 2f95aed  style: show cancel button on the right
+- 12134a7  style: show cancel button on the right
+- a92e650  style: remove bold for reset option
+- d4eec37  style: show cancel button on the right
+- 1657b7d  style: show bold for cancel button
+
 ## [1.5.0] - 2026-06-07
 
 ### Added
