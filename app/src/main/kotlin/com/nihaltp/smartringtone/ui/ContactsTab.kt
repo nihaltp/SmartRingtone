@@ -144,6 +144,7 @@ fun ContactsTab(
                     Text(
                         text = stringResource(R.string.cancel),
                         color = TextSecondary,
+                        fontWeight = FontWeight.Bold,
                     )
                 }
             },
@@ -157,7 +158,6 @@ fun ContactsTab(
                     Text(
                         text = stringResource(R.string.reset),
                         color = AccentColor,
-                        fontWeight = FontWeight.Bold,
                     )
                 }
             },
