@@ -140,6 +140,14 @@ fun ContactsTab(
                 )
             },
             confirmButton = {
+                TextButton(onClick = { contactToReset = null }) {
+                    Text(
+                        text = stringResource(R.string.cancel),
+                        color = TextSecondary,
+                    )
+                }
+            },
+            dismissButton = {
                 TextButton(
                     onClick = {
                         contactToReset?.let { onResetScore(it.id) }
@@ -150,14 +158,6 @@ fun ContactsTab(
                         text = stringResource(R.string.reset),
                         color = AccentColor,
                         fontWeight = FontWeight.Bold,
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { contactToReset = null }) {
-                    Text(
-                        text = stringResource(R.string.cancel),
-                        color = TextSecondary,
                     )
                 }
             },
