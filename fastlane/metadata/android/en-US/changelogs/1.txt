@@ -1,9 +1,11 @@
 Initial release
 
-• Automatically adjust contact ringtones based on call activity
-• Assign custom ringtones to contacts
-• Track missed, rejected, incoming, and outgoing calls
-• Configure ringtone priority levels
-• Manage contact scores and ringtone assignments
-• Local-first design with no account required
-• No internet connection required
+<ul>
+  <li>Automatically adjust contact ringtones based on call activity</li>
+  <li>Assign custom ringtones to contacts</li>
+  <li>Track missed, rejected, incoming, and outgoing calls</li>
+  <li>Configure ringtone priority levels</li>
+  <li>Manage contact scores and ringtone assignments</li>
+  <li>Local-first design with no account required</li>
+  <li>No internet connection required</li>
+</ul>

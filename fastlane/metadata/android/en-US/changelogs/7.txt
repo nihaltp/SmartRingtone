@@ -1,7 +1,9 @@
 Smart Ringtone v1.4.0 (2026-06-06)
 
-Commits included in this release:
-- ced81d0  feat: WorkManager Background Sync Integration
-- d41867b  feat: add dynamic colors support
-- 6ce08b8  chore: delete app after screenshot is taken
-- 9545881  chore: update screenshot file to capture call log tab
+<h3>Commits included in this release</h3>
+<ul>
+  <li>ced81d0  feat: WorkManager Background Sync Integration</li>
+  <li>d41867b  feat: add dynamic colors support</li>
+  <li>6ce08b8  chore: delete app after screenshot is taken</li>
+  <li>9545881  chore: update screenshot file to capture call log tab</li>
+</ul>

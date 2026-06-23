@@ -2,27 +2,31 @@ Smart Ringtone automatically adjusts contact ringtones based on your call histor
 
 Instead of using the same ringtone for every contact, Smart Ringtone can assign different ringtones based on missed and answered calls. Contacts who repeatedly call without reaching you can be given more noticeable ringtones, making it easier to recognize potentially important calls.
 
-Features:
+<h3>Features</h3>
 
-• Automatically update contact-specific ringtones
-• Track missed, rejected, incoming, and outgoing calls
-• Configure multiple ringtones for different priority levels
-• Manage contact scores and ringtone assignments
-• View call history and ringtone changes
-• Reset scores manually at any time
-• Works entirely on your device
-• No account required
-• No internet connection required
+<ul>
+  <li>Automatically update contact-specific ringtones</li>
+  <li>Track missed, rejected, incoming, and outgoing calls</li>
+  <li>Configure multiple ringtones for different priority levels</li>
+  <li>Manage contact scores and ringtone assignments</li>
+  <li>View call history and ringtone changes</li>
+  <li>Reset scores manually at any time</li>
+  <li>Works entirely on your device</li>
+  <li>No account required</li>
+  <li>No internet connection required</li>
+</ul>
 
-How it works:
+<h3>How it works</h3>
 
-1. Add one or more ringtones to the app.
-2. Smart Ringtone monitors call activity.
-3. Missed or rejected calls increase a contact's score.
-4. Answered calls reset the score.
-5. The contact's ringtone is updated automatically based on the configured score level.
+<ol>
+  <li>Add one or more ringtones to the app.</li>
+  <li>Smart Ringtone monitors call activity.</li>
+  <li>Missed or rejected calls increase a contact's score.</li>
+  <li>Answered calls reset the score.</li>
+  <li>The contact's ringtone is updated automatically based on the configured score level.</li>
+</ol>
 
-Privacy:
+<h3>Privacy</h3>
 
 Smart Ringtone requires access to Contacts, Phone State, and Call Logs in order to assign custom contact ringtones and track call activity. All processing is performed locally on your device. No call data, contacts, or personal information are transmitted to external servers.
 

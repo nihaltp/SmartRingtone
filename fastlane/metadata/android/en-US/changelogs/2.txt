@@ -1,6 +1,8 @@
 Smart Ringtone v1.1.0 (2026-06-04)
 
-Commits included in this release:
-- f74b572  fix: release not working due to r8 minification
-- f266656  style(settings): move github card below licences
-- 1b014a0  feat: add light theme
+<h3>Commits included in this release</h3>
+<ul>
+  <li>f74b572  fix: release not working due to r8 minification</li>
+  <li>f266656  style(settings): move github card below licences</li>
+  <li>1b014a0  feat: add light theme</li>
+</ul>
