@@ -4,6 +4,10 @@ A smart, automated Android utility that dynamically changes and escalates contac
 
 ---
 
+![Alt](https://repobeats.axiom.co/api/embed/7460d22ff99a7210b51b4bcdc7545162df13c323.svg "Repobeats analytics image")
+
+---
+
 ## 💡 The Core Concept: Call-Score Escalation
 
 The app assigns a **Call Score** (starting at `0`) to each contact. When contacts call you, their score changes based on your response:
