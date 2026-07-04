@@ -62,8 +62,17 @@ def resolve_abi_apk(device_id)
 
   split_apk = File.expand_path("../app/build/outputs/apk/debug/#{apk_name}", __dir__)
   universal_apk = File.expand_path("../app/build/outputs/apk/debug/app-universal-debug.apk", __dir__)
+  base_apk = File.expand_path("../app/build/outputs/apk/debug/app-debug.apk", __dir__)
 
-  File.exist?(split_apk) ? split_apk : universal_apk
+  if File.exist?(split_apk)
+    split_apk
+  elsif File.exist?(universal_apk)
+    universal_apk
+  elsif File.exist?(base_apk)
+    base_apk
+  else
+    raise "Could not find any debug APK for device testing."
+  end
 end
 
 default_platform(:android)
@@ -153,7 +162,7 @@ platform :android do
 
     commits = []
     unless commits_raw.empty?
-      commits_raw.split("\n").each do |line|
+      commits_raw.split("\n").reverse_each do |line|
         parts = line.split(" ", 2)
         sha = parts[0]
         msg = parts[1] || ""
