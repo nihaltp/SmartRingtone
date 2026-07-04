@@ -53,6 +53,9 @@ class ScreenshotTest {
         PreferenceHelper.setContactScore(context, "mock_2", 2)
         PreferenceHelper.setContactScore(context, "mock_3", 4)
 
+        // Clear existing call logs in case previous app data wasn't uninstalled
+        PreferenceHelper.clearCallLogsHistory(context)
+
         // Add some call logs
         PreferenceHelper.addCallLogEntry(
             context,
