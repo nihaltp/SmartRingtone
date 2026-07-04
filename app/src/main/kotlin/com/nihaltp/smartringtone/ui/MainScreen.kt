@@ -304,6 +304,8 @@ fun MainScreen(
                         AppTab.LOG ->
                             CallLogsTab(
                                 callLogs = callLogs,
+                                isLoading = isLoading,
+                                onSync = { viewModel.syncCallLogs() },
                                 onClear = { viewModel.clearHistory() },
                                 onRescan = { viewModel.rescanCallLogs() },
                                 checkSystemCallLogEmpty = { viewModel.checkSystemCallLogEmpty() },

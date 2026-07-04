@@ -31,6 +31,8 @@ import java.util.*
 @Composable
 fun CallLogsTab(
     callLogs: List<CallLogEntry>,
+    isLoading: Boolean,
+    onSync: () -> Unit,
     onClear: () -> Unit,
     onRescan: () -> Unit,
     checkSystemCallLogEmpty: () -> Boolean,
@@ -180,12 +182,33 @@ fun CallLogsTab(
                 .fillMaxSize()
                 .padding(16.dp),
     ) {
-        Text(
-            text = stringResource(R.string.tracked_call_history),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.tracked_call_history),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+            )
+            IconButton(onClick = onSync, enabled = !isLoading) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = AccentColor,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.content_desc_sync_logs),
+                        tint = TextPrimary,
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
