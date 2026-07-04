@@ -81,6 +81,9 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
     private val _unavailableRingtones = MutableStateFlow<Map<Int, Boolean>>(emptyMap())
     val unavailableRingtones: StateFlow<Map<Int, Boolean>> = _unavailableRingtones
 
+    private val _debugCustomRingtoneContacts = MutableStateFlow<List<Contact>>(emptyList())
+    val debugCustomRingtoneContacts: StateFlow<List<Contact>> = _debugCustomRingtoneContacts
+
     private var mediaPlayer: MediaPlayer? = null
     private var currentRingtone: android.media.Ringtone? = null
 
@@ -1046,6 +1049,61 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
                 } finally {
                     _isLoading.value = false
                 }
+            }
+        }
+    }
+
+    fun loadDebugCustomRingtoneContacts() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val list =
+                    withContext(Dispatchers.IO) {
+                        ContactHelper.getContactsWithCustomRingtones(context)
+                    }
+                _debugCustomRingtoneContacts.value = list
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "loadDebugCustomRingtoneContacts failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun resetDebugCustomRingtones() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                withContext(Dispatchers.IO) {
+                    val contactIds = _debugCustomRingtoneContacts.value.map { it.id }
+                    ContactHelper.resetCustomRingtones(context, contactIds)
+                }
+                loadDebugCustomRingtoneContacts()
+                loadData()
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "resetDebugCustomRingtones failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun resetSpecificDebugCustomRingtone(contactId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                withContext(Dispatchers.IO) {
+                    ContactHelper.resetCustomRingtones(context, listOf(contactId))
+                }
+                loadDebugCustomRingtoneContacts()
+                loadData()
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "resetSpecificDebugCustomRingtone failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
             }
         }
     }

@@ -332,6 +332,65 @@ object ContactHelper {
         }
     }
 
+    fun getContactsWithCustomRingtones(context: Context): List<Contact> {
+        val contactsList = mutableListOf<Contact>()
+        try {
+            val contentResolver = context.contentResolver
+            val cursor =
+                contentResolver.query(
+                    ContactsContract.Contacts.CONTENT_URI,
+                    arrayOf(
+                        ContactsContract.Contacts._ID,
+                        ContactsContract.Contacts.DISPLAY_NAME,
+                        ContactsContract.Contacts.PHOTO_THUMBNAIL_URI,
+                        ContactsContract.Contacts.CUSTOM_RINGTONE,
+                    ),
+                    "${ContactsContract.Contacts.CUSTOM_RINGTONE} IS NOT NULL",
+                    null,
+                    ContactsContract.Contacts.DISPLAY_NAME + " ASC",
+                )
+
+            cursor?.use {
+                val idCol = it.getColumnIndex(ContactsContract.Contacts._ID)
+                val nameCol = it.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
+                val photoCol = it.getColumnIndex(ContactsContract.Contacts.PHOTO_THUMBNAIL_URI)
+                val ringtoneCol = it.getColumnIndex(ContactsContract.Contacts.CUSTOM_RINGTONE)
+
+                while (it.moveToNext()) {
+                    val contactId = it.getString(idCol) ?: continue
+                    val name = it.getString(nameCol) ?: "Unknown"
+                    val photoUri = if (photoCol >= 0) it.getString(photoCol) else null
+                    val customRingtone = if (ringtoneCol >= 0) it.getString(ringtoneCol) else null
+
+                    if (customRingtone != null) {
+                        contactsList.add(
+                            Contact(
+                                id = contactId,
+                                name = name,
+                                phone = "",
+                                photoUri = photoUri,
+                                currentRingtone = customRingtone,
+                                score = 0,
+                                mappedRingtoneName = customRingtone,
+                            ),
+                        )
+                    }
+                }
+            }
+        } catch (e: SecurityException) {
+            Log.e("ContactHelper", "Permission denial reading contacts for debug", e)
+        }
+        return contactsList
+    }
+
+    fun resetCustomRingtones(
+        context: Context,
+        contactIds: List<String>,
+    ): Boolean {
+        val updates = contactIds.map { it to null }
+        return updateContactsRingtones(context, updates)
+    }
+
     fun updateContactsRingtones(
         context: Context,
         updates: List<Pair<String, String?>>,

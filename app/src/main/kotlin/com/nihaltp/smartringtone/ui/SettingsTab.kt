@@ -85,6 +85,7 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
     var showLicensesDialog by remember { mutableStateOf(false) }
     var showLogsViewer by remember { mutableStateOf(false) }
     var showBlocklistDialog by remember { mutableStateOf(false) }
+    var showDebugRingtonesDialog by remember { mutableStateOf(false) }
 
     val versionName = remember { GitHubIssueHelper.getAppVersionName(context) }
     val versionCode = remember { GitHubIssueHelper.getAppVersionCode(context) }
@@ -111,6 +112,13 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                 clipboardManager.setText(AnnotatedString(logsText))
             },
             onDismiss = { showLogsViewer = false },
+        )
+    }
+
+    if (showDebugRingtonesDialog) {
+        CustomRingtonesDebugDialog(
+            viewModel = viewModel,
+            onDismiss = { showDebugRingtonesDialog = false },
         )
     }
 
@@ -582,6 +590,64 @@ fun SettingsTab(viewModel: RingtoneChangerViewModel) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(stringResource(R.string.import_data_btn), fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
+                }
+            }
+        }
+
+        // Debug Menu Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(6.dp),
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            border = BorderStroke(1.dp, BorderColor),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "DEBUG MENU",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentColor,
+                    fontFamily = FontFamily.Monospace,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.loadDebugCustomRingtoneContacts()
+                                showDebugRingtonesDialog = true
+                            }
+                            .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BugReport,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Manage Custom Ringtones",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                        )
+                        Text(
+                            text = "View and reset contacts with custom ringtones",
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = TextSecondary,
+                        modifier = Modifier.size(20.dp),
+                    )
                 }
             }
         }
@@ -1317,5 +1383,196 @@ fun ScoreAdditionRow(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun CustomRingtonesDebugDialog(
+    viewModel: RingtoneChangerViewModel,
+    onDismiss: () -> Unit,
+) {
+    val debugContacts by viewModel.debugCustomRingtoneContacts.collectAsState()
+
+    var showResetAllConfirm by remember { mutableStateOf(false) }
+    var resetSpecificContactConfirm by remember { mutableStateOf<com.nihaltp.smartringtone.data.Contact?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Contacts with Custom Ringtones",
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+            )
+        },
+        text = {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+            ) {
+                if (debugContacts.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = "No contacts found with custom ringtones.",
+                            color = TextSecondary,
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Found ${debugContacts.size} contacts. Tap on a contact to reset their ringtone.",
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        debugContacts.forEach { contact ->
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { resetSpecificContactConfirm = contact }
+                                        .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column {
+                                    Text(
+                                        text = contact.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = TextPrimary,
+                                    )
+                                    Text(
+                                        text = "ID: ${contact.id}",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary,
+                                    )
+                                }
+                            }
+                            Divider(color = BorderColor)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                if (debugContacts.isNotEmpty()) {
+                    TextButton(
+                        onClick = {
+                            showResetAllConfirm = true
+                        },
+                    ) {
+                        Text(
+                            text = "Reset All",
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        text = "Close",
+                        color = AccentColor,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    )
+                }
+            }
+        },
+        containerColor = CardBackground,
+        titleContentColor = TextPrimary,
+        textContentColor = TextSecondary,
+    )
+
+    if (showResetAllConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetAllConfirm = false },
+            title = {
+                Text(
+                    text = "Reset All Ringtones",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to reset the custom ringtone for all these contacts to the default ringtone?",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showResetAllConfirm = false }) {
+                    Text("Cancel", color = AccentColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.resetDebugCustomRingtones()
+                        showResetAllConfirm = false
+                    },
+                ) {
+                    Text("Confirm", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
+    }
+
+    resetSpecificContactConfirm?.let { contact ->
+        AlertDialog(
+            onDismissRequest = { resetSpecificContactConfirm = null },
+            title = {
+                Text(
+                    text = "Reset Ringtone",
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to reset the custom ringtone for ${contact.name}?",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { resetSpecificContactConfirm = null }) {
+                    Text("Cancel", color = AccentColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.resetSpecificDebugCustomRingtone(contact.id)
+                        resetSpecificContactConfirm = null
+                    },
+                ) {
+                    Text("Confirm", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = CardBackground,
+            titleContentColor = TextPrimary,
+            textContentColor = TextSecondary,
+        )
     }
 }
