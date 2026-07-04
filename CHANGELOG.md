@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-07-04
+
+### Fixed
+
+- b258a2d  fix: update notification dismissal logic in CallSyncHelper
+- d89ec73  fix: clear existing call logs before adding new entries in ScreenshotTest
+
+### Added
+
+- 9101f4c  feat: add debug menu for managing custom ringtones and contacts
+- 8f5c688  feat: add functionality to set ringtone based on contact score
+- a5a6f81  feat: add sync functionality to CallLogsTab with loading indicator
+
+### Refactor
+
+- a18bd2a  refactor: remove ABI splits and version code mapping for APK outputs
+
+### Maintenance
+
+- 2bd6a56  chore: use html in fastlane files
+- 33fc94a  chore: add repobeats to readme
+
 ## [1.5.1] - 2026-06-11
 
 ### Added
