@@ -1053,6 +1053,28 @@ class RingtoneChangerViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun forceSetContactRingtoneByScore(contactId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                withContext(Dispatchers.IO) {
+                    val currentContacts = _contacts.value
+                    val contact = currentContacts.find { it.id == contactId }
+                    if (contact != null) {
+                        val currentRingtones = _ringtones.value
+                        ContactHelper.updateContactsRingtonesBasedOnScores(context, listOf(contact), currentRingtones)
+                    }
+                }
+                loadData() // Refresh contacts
+            } catch (e: Exception) {
+                AppLogger.log(context, "ViewModel", "forceSetContactRingtoneByScore failed", e)
+                _error.value = e
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun loadDebugCustomRingtoneContacts() {
         viewModelScope.launch {
             _isLoading.value = true

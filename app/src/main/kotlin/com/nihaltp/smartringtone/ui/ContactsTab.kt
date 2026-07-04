@@ -37,6 +37,7 @@ fun ContactsTab(
     onResetAll: () -> Unit,
     onTogglePlay: (String) -> Unit,
     onRescanContact: (String) -> Unit,
+    onSetRingtone: (String) -> Unit,
 ) {
     var sortBy by rememberSaveable { mutableStateOf(ContactSortOrder.SCORE) }
     var sortAscending by rememberSaveable { mutableStateOf(false) }
@@ -200,6 +201,17 @@ fun ContactsTab(
                                 color = AccentColor,
                             )
                         }
+                        TextButton(
+                            onClick = {
+                                onSetRingtone(activeContact.id)
+                                activeContactActions = null
+                            },
+                        ) {
+                            Text(
+                                text = "Set Ringtone",
+                                color = AccentColor,
+                            )
+                        }
                     }
                     TextButton(
                         onClick = {
@@ -212,14 +224,16 @@ fun ContactsTab(
                             color = TextSecondary,
                         )
                     }
-                    TextButton(
-                        onClick = { activeContactActions = null },
-                    ) {
-                        Text(
-                            text = stringResource(R.string.cancel),
-                            color = AccentColor,
-                            fontWeight = FontWeight.Bold,
-                        )
+                    if (activeContact.score <= 0) {
+                        TextButton(
+                            onClick = { activeContactActions = null },
+                        ) {
+                            Text(
+                                text = stringResource(R.string.cancel),
+                                color = AccentColor,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
             },

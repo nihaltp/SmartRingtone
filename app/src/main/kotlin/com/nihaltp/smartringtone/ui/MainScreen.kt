@@ -299,6 +299,7 @@ fun MainScreen(
                                 onResetAll = { viewModel.resetAllScores() },
                                 onTogglePlay = { uri -> viewModel.togglePlayPreview(uri) },
                                 onRescanContact = { id -> viewModel.rescanContactCallLogs(id) },
+                                onSetRingtone = { id -> viewModel.forceSetContactRingtoneByScore(id) },
                             )
                         AppTab.LOG ->
                             CallLogsTab(
