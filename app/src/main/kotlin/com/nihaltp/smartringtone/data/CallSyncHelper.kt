@@ -255,7 +255,7 @@ object CallSyncHelper {
                         Log.d("CallSyncHelper", "Applied final score for contact $contactId: $finalScore")
                         AppLogger.log(context, "CallSyncHelper", "Applied final score for contact $contactId: $finalScore")
                     }
-                    if (totalChanged > 0) {
+                    if (totalLogs > 0 || totalChanged > 0) {
                         com.nihaltp.smartringtone.NotificationHelper.dismissNotification(context)
                     }
 
