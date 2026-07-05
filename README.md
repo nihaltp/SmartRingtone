@@ -4,6 +4,22 @@ A smart, automated Android utility that dynamically changes and escalates contac
 
 ---
 
+## Download
+
+Available on my F-Droid repository:
+
+<img src="https://raw.githubusercontent.com/nihaltp/fdroid/main/repo/index.png" width="100" height="100" align="right" alt="F-Droid QR Code">
+
+**Repository URL:**
+
+```text
+https://nihaltp.github.io/fdroid/repo/
+```
+
+[Open Repo Page](https://nihaltp.github.io/fdroid/repo/) and scan the QR code.
+
+---
+
 ![Alt](https://repobeats.axiom.co/api/embed/7460d22ff99a7210b51b4bcdc7545162df13c323.svg "Repobeats analytics image")
 
 ---
