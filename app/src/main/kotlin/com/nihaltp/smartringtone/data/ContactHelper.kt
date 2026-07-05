@@ -278,28 +278,10 @@ object ContactHelper {
         val activeRingtones = ringtones ?: PreferenceHelper.getRingtones(context)
 
         if (newScore == 0) {
-            // Restore original ringtone
-            val original = PreferenceHelper.getOriginalRingtone(context, contactId)
-            val fallbackUri = PreferenceHelper.getFallbackRingtoneUri(context)
-
-            val uriToSet: String?
-            if (original != null) {
-                if (original == PreferenceHelper.ORIGINAL_RINGTONE_DEFAULT_PLACEHOLDER) {
-                    uriToSet = fallbackUri
-                } else {
-                    if (isUriReadable(context, original)) {
-                        uriToSet = original
-                    } else {
-                        uriToSet = fallbackUri
-                    }
-                }
-            } else {
-                uriToSet = fallbackUri
-            }
-
-            val success = setContactRingtone(context, contactId, uriToSet)
-            if (!success && uriToSet != fallbackUri && fallbackUri != null) {
-                setContactRingtone(context, contactId, fallbackUri)
+            // Reset: clear custom ringtone (null) and remove backup
+            val success = setContactRingtone(context, contactId, null)
+            if (!success) {
+                Log.e("ContactHelper", "Failed to clear custom ringtone for contact $contactId")
             }
             PreferenceHelper.setOriginalRingtone(context, contactId, null) // clear original backup
         } else {
