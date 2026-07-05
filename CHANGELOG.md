@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.1] - 2026-07-05
+
+### Refactor
+
+- 69c6554  refactor: simplify ringtone reset logic in updateContactsRingtonesBasedOnScores
+
+### Documentation
+
+- 6b297f3  docs: update README to include download instructions and repository URL
+
 ## [1.6.0] - 2026-07-04
 
 ### Fixed

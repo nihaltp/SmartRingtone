@@ -1,0 +1,5 @@
+Smart Ringtone v1.6.1 (2026-07-05)
+
+Commits included in this release:
+- 69c6554  refactor: simplify ringtone reset logic in updateContactsRingtonesBasedOnScores
+- 6b297f3  docs: update README to include download instructions and repository URL
