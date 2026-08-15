@@ -1,5 +1,7 @@
 # Smart Ringtone 🎵
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE) [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg?style=for-the-badge)](#tech-stack--architecture)
+
 A smart, automated Android utility that dynamically changes and escalates contact ringtones based on call behavior (missed, rejected, or answered calls). Built with Jetpack Compose and Kotlin, it integrates directly with the Android Contacts Provider to safely manage per-contact custom ringtones.
 
 >Basically this app is made so that i will attend more calls. I usually don't attend calls from some contacts, so this app will change their ringtone to a set ringtone as they call me more and more.
@@ -9,6 +11,12 @@ A smart, automated Android utility that dynamically changes and escalates contac
 ---
 
 ## Download
+
+### 1. GitHub Releases (Latest)
+
+Download the latest APK directly from the [GitHub Releases](https://github.com/nihaltp/SmartRingtone/releases/latest) page.
+
+### 2. F-Droid Repository
 
 Available on my F-Droid repository:
 
@@ -25,6 +33,24 @@ https://nihaltp.github.io/fdroid/repo/
 ---
 
 ## 💡 The Core Concept: Call-Score Escalation
+
+```mermaid
+graph TD
+    A[Incoming Call] --> B{Call Status}
+    B -->|Missed| C[Score +1 📞]
+    B -->|Rejected| D[Score +2 🚫]
+    B -->|Answered| E[Score Reset to 0 ✅]
+
+    A2[Outgoing Call] --> E
+
+    C --> F{Update Contact Ringtone}
+    D --> F
+    E --> F
+
+    F -->|Score = 0| G[Restore Default Ringtone]
+    F -->|Score >= 1| H[Set Ringtone from Sequence: index = Score - 1]
+    H -->|Score > List Length| I[Cap at Final Ringtone in Sequence]
+```
 
 The app assigns a **Call Score** (starting at `0`) to each contact. When contacts call you, their score changes based on your response:
 
@@ -45,16 +71,16 @@ This escalation system ensures that contacts trying to reach you repeatedly rece
 
 ## ✨ Features
 
-* **Ringtone Sequence Customizer**: Add, delete, and reorder (move up/down) custom audio files from your device. Toggle playback to preview ringtones directly from the UI.
-* **Contact Manager**: List all device contacts, search using a multi-term (space-separated) keyword algorithm, and sort them by Name or Call Score.
-* **Score Override / Reset**: Manually reset the score of an individual contact or all contacts globally back to `0`, restoring their default ringtones.
-* **Tracked Call History (Logs)**: View a local log of calls processed by the background sync, tracking the call direction (incoming/outgoing), type (answered/missed/rejected), timestamp, and the exact score change.
-* **Customizable Call Score Additions**: Configure custom score addition points for missed and rejected calls independently in Settings.
-* **Backup & Restore**: Safely export your settings, contact scores, and ringtone mappings to a file, and import them back at any time.
-* **Service Pauser**: Temporarily pause custom ringtone changes and automatically restore all contacts to their default/original settings. Extremely useful before uninstalling the app to ensure your device's contacts are left in their original state.
-* **Fallback Default Ringtone**: Choose a fallback ringtone to use when restoring contact ringtones if their original custom ringtone is deleted, missing, or was set to system default.
-* **Robust Diagnostics**: Turn on logging to capture errors and background events locally. Review logs in the built-in system log viewer, clear logs, or copy them to the clipboard to report bugs.
-* **Progressive Sync Notifications**: Displays a background notification progress bar during bulk contact updates to keep you informed of the sync progress.
+* 🎵 **Ringtone Sequence Customizer**: Add, delete, and reorder (move up/down) custom audio files from your device. Toggle playback to preview ringtones directly from the UI.
+* 👤 **Contact Manager**: List all device contacts, search using a multi-term (space-separated) keyword algorithm, and sort them by Name or Call Score.
+* 🔄 **Score Override / Reset**: Manually reset the score of an individual contact or all contacts globally back to `0`, restoring their default ringtones.
+* 📜 **Tracked Call History (Logs)**: View a local log of calls processed by the background sync, tracking the call direction (incoming/outgoing), type (answered/missed/rejected), timestamp, and the exact score change.
+* ⚙️ **Customizable Call Score Additions**: Configure custom score addition points for missed and rejected calls independently in Settings.
+* 💾 **Backup & Restore**: Safely export your settings, contact scores, and ringtone mappings to a file, and import them back at any time.
+* ⏸️ **Service Pauser**: Temporarily pause custom ringtone changes and automatically restore all contacts to their default/original settings. Extremely useful before uninstalling the app to ensure your device's contacts are left in their original state.
+* 🔔 **Fallback Default Ringtone**: Choose a fallback ringtone to use when restoring contact ringtones if their original custom ringtone is deleted, missing, or was set to system default.
+* 🩺 **Robust Diagnostics**: Turn on logging to capture errors and background events locally. Review logs in the built-in system log viewer, clear logs, or copy them to the clipboard to report bugs.
+* 🚀 **Progressive Sync Notifications**: Displays a background notification progress bar during bulk contact updates to keep you informed of the sync progress.
 
 ---
 
@@ -193,3 +219,9 @@ This project enforces `ktlint` for code style rules. Lint checking and formattin
   ```bash
   ./gradlew ktlintFormat
   ```
+
+---
+
+## 📄 License
+
+Smart Ringtone is free software: you can redistribute it and/or modify it under the terms of the **MIT License**. See the [LICENSE](LICENSE) file for more details.
