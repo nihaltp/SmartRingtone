@@ -2,6 +2,10 @@
 
 A smart, automated Android utility that dynamically changes and escalates contact ringtones based on call behavior (missed, rejected, or answered calls). Built with Jetpack Compose and Kotlin, it integrates directly with the Android Contacts Provider to safely manage per-contact custom ringtones.
 
+>Basically this app is made so that i will attend more calls. I usually don't attend calls from some contacts, so this app will change their ringtone to a set ringtone as they call me more and more.
+>
+>For me personally, i have set a ringtone that will shame me if i don't attend calls for sometime. I will assure you, this has helped me attend more calls.
+
 ---
 
 ## Download
@@ -17,10 +21,6 @@ https://nihaltp.github.io/fdroid/repo/
 ```
 
 [Open Repo Page](https://nihaltp.github.io/fdroid/repo/) and scan the QR code.
-
----
-
-![Alt](https://repobeats.axiom.co/api/embed/7460d22ff99a7210b51b4bcdc7545162df13c323.svg "Repobeats analytics image")
 
 ---
 
