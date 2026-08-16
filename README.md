@@ -1,6 +1,6 @@
 # Smart Ringtone 🎵
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE) [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg?style=for-the-badge)](#tech-stack--architecture)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE) [![Platform: Android](https://img.shields.io/badge/Platform-Android-green.svg?style=for-the-badge)](#tech-stack--architecture) [![Total Github Downloads (All Assets)](https://img.shields.io/github/downloads/nihaltp/SmartRingtone/total?style=for-the-badge&logo=github)](https://github.com/nihaltp/SmartRingtone/releases/latest)
 
 A smart, automated Android utility that dynamically changes and escalates contact ringtones based on call behavior (missed, rejected, or answered calls). Built with Jetpack Compose and Kotlin, it integrates directly with the Android Contacts Provider to safely manage per-contact custom ringtones.
 
