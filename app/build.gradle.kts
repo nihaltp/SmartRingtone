@@ -112,7 +112,7 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
     // Gson for JSON Serialization in SharedPreferences
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.14.0")
 
     // Tooling/Test
     debugImplementation("androidx.compose.ui:ui-tooling")
